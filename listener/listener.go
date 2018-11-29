@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/easmith/p2p-messanger/types"
 	"io"
 	"io/ioutil"
-	"local/p2pmessager/types"
+
 	"log"
 	"net"
 	"net/http"
@@ -122,7 +123,7 @@ func handlePeer(rw *bufio.ReadWriter, conn net.Conn, peers *types.Peers) {
 
 				p, found := peers.ById.Get(types.Id(to[0 : len(to)-1]))
 				if !found {
-					n, e := conn.Write([]byte(fmt.Sprintf("ERR not found %v\n", types.Id(to))))
+					conn.Write([]byte(fmt.Sprintf("ERR not found %v\n", types.Id(to))))
 					continue
 				}
 
