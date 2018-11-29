@@ -1,11 +1,9 @@
-/* ThreadedEchoServer
- */
 package main
 
 import (
 	"flag"
-	"local/p2pmessager/listener"
-	"local/p2pmessager/types"
+	"github.com/easmith/p2p-messanger/listener"
+	"github.com/easmith/p2p-messanger/types"
 	"log"
 	"os"
 )
