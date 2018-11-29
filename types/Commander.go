@@ -8,8 +8,8 @@ var itHttp = map[string]bool{
 
 var itMessanger = map[string]bool{
 	"NAME": true,
-	"MMSG": true,
-	"CLOS": true,
+	"LIST": true,
+	"SEND": true,
 }
 
 func ItIsHttp(ba []byte) bool {
