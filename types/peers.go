@@ -12,7 +12,7 @@ type Id string
 type Peer struct {
 	Addr Addr
 	Id   Id
-	Conn net.Conn
+	Conn *net.Conn
 }
 
 func (p Peer) String() string {
@@ -24,12 +24,12 @@ type PeerById struct {
 	Peers map[Id]*Peer
 }
 
-func (p *PeerById) Get(id Id) (*Peer, bool) {
+func (p *PeerById) Get(id Id) (peer *Peer, found bool) {
 	p.RLock()
 	defer p.RUnlock()
 
-	peer, ok := p.Peers[id]
-	return peer, ok
+	peer, found = p.Peers[id]
+	return
 }
 
 func (p *PeerById) Put(id Id, peer *Peer) {
@@ -51,12 +51,12 @@ type PeerByAddr struct {
 	peers map[Addr]*Peer
 }
 
-func (p *PeerByAddr) Get(key Addr) (*Peer, bool) {
+func (p *PeerByAddr) Get(key Addr) (peer *Peer, found bool) {
 	p.RLock()
 	defer p.RUnlock()
 
-	peer, ok := p.peers[key]
-	return peer, ok
+	peer, found = p.peers[key]
+	return
 }
 
 func (p *PeerByAddr) Put(key Addr, peer *Peer) {
@@ -78,10 +78,18 @@ type Peers struct {
 	ById   PeerById
 }
 
-func (p *Peers) Add(conn net.Conn, id Id) (peer *Peer) {
-	peer = &Peer{Addr(conn.RemoteAddr().String()), id, conn}
-	p.ByAddr.Put(peer.Addr, peer)
-	p.ById.Put(peer.Id, peer)
+func (p *Peers) Add(conn *net.Conn, id Id) (peer *Peer) {
+	addr := Addr((*conn).RemoteAddr().String())
+	peer, found := p.ByAddr.Get(addr)
+	if !found {
+		peer = &Peer{addr, id, conn}
+		p.ByAddr.Put(peer.Addr, peer)
+		p.ById.Put(peer.Id, peer)
+	} else {
+		peer.Id = id
+		peer.Conn = conn
+	}
+
 	return
 }
 

@@ -74,8 +74,10 @@ func onConnection(conn net.Conn, peers *types.Peers) {
 
 func handlePeer(rw *bufio.ReadWriter, conn net.Conn, peers *types.Peers) {
 	var buf = make([]byte, 1024)
+	var peer *types.Peer
 	for {
-		n, err := rw.Read(buf)
+		var cmd = make([]byte, 4)
+		n, err := rw.Read(cmd)
 		if err != nil {
 			if err == io.EOF {
 				log.Printf("Disconected by EOF")
@@ -85,30 +87,63 @@ func handlePeer(rw *bufio.ReadWriter, conn net.Conn, peers *types.Peers) {
 			return
 		}
 
-		log.Printf("MAIN Recieved: [%v] %s", n, bytes.Trim(buf, "\r\n\x00"))
+		log.Printf("MAIN Recieved: [%v] %s", n, bytes.Trim(cmd, "\r\n\x00"))
 
-		switch string(buf[0:4]) {
+		switch string(cmd) {
 		case "NAME":
 			{
-				peer := peers.Add(conn, types.Id(string(bytes.Trim(buf[4:16], "\r\n\x00"))))
+				line, _, _ := rw.ReadLine()
+				id := types.Id(bytes.Trim(line, " "))
+				_, found := peers.ById.Get(id)
+				if found {
+					conn.Write([]byte("ERR Name already in use\n"))
+					continue
+				}
+				peer = peers.Add(&conn, id)
 				log.Printf("new peer: %s", peer)
-				conn.Write([]byte("REGI\n"))
+				conn.Write([]byte("OK\n"))
 			}
 		case "LIST":
 			{
-				for _, peer := range peers.ById.Peers {
-					conn.Write([]byte(fmt.Sprintf("PEER\t%v\t%s\n", peer.Addr, peer.Id)))
+				rw.Read(buf)
+				for _, p := range peers.ById.Peers {
+					conn.Write([]byte(fmt.Sprintf("PEER\t%v\t%s\n", p.Addr, p.Id)))
 				}
 
+			}
+		case "SEND":
+			{
+				if peer == nil {
+					//conn.Write([]byte(fmt.Sprintf("ERR you not registered (use name)\n")))
+					continue
+				}
+
+				to, _ := rw.ReadString(0x20)
+
+				p, found := peers.ById.Get(types.Id(to[0 : len(to)-1]))
+				if !found {
+					n, e := conn.Write([]byte(fmt.Sprintf("ERR not found %v\n", types.Id(to))))
+					continue
+				}
+
+				msg, err := rw.ReadString('\n')
+				if err != nil {
+					log.Printf("ReadMessageError: %s", err)
+					continue
+				}
+
+				_, err = (*p.Conn).Write([]byte(fmt.Sprintf("MESS %v: %v", peer.Id, msg)))
+				if err != nil {
+					log.Printf("WriteMessageError: %s", err)
+					(*peer.Conn).Write([]byte("ERR " + err.Error()))
+					continue
+				}
+
+				(*peer.Conn).Write([]byte("OK\n"))
 			}
 		default:
 			conn.Write([]byte("UNKNOWN_CMD\n"))
 		}
-
-		if string(buf[0:4]) == "LIST" {
-
-		}
-
 	}
 }
 
