@@ -63,7 +63,7 @@ func onConnection(conn net.Conn, peers *types.Peers) {
 		log.Printf("Read peak ERROR: %s", err)
 		return
 	}
-	log.Printf("Stop read peak")
+	log.Printf("Stop read peak: %v", string(buf))
 
 	if types.ItIsMessanger(buf) {
 		log.Println("This is message!")
