@@ -1,28 +1,42 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
+import React, {Component} from 'react';
 import './App.css';
 
 class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
-    );
-  }
+
+    componentDidMount() {
+
+        var socket = new WebSocket("ws://localhost:35035/ws");
+
+        socket.onopen = function() {
+            console.log("Соединение установлено.");
+        };
+
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log('Соединение закрыто чисто');
+            } else {
+                console.log('Обрыв соединения'); // например, "убит" процесс сервера
+            }
+            console.log('Код: ' + event.code + ' причина: ' + event.reason);
+        };
+
+        socket.onmessage = function(event) {
+            console.log("Получены данные " + event.data);
+        };
+
+        socket.onerror = function(error) {
+            console.log("Ошибка " + error.message);
+        };
+
+    }
+
+    render() {
+        return (
+            <div className="App">
+                P2P-messenger - training
+            </div>
+        );
+    }
 }
 
 export default App;
