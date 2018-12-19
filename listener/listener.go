@@ -38,6 +38,7 @@ func StartListener(port int, ch chan string, peers *types.Peers) {
 			ch <- "conn Accept error: " + err.Error()
 			continue
 		}
+		// TODO: общение через канал
 		ch <- "new connection: " + conn.RemoteAddr().String()
 		go onConnection(conn, peers)
 	}
@@ -69,7 +70,7 @@ func onConnection(conn net.Conn, peers *types.Peers) {
 		handlePeer(readWriter, conn, peers)
 	} else {
 		log.Println("Try request")
-		handleRequest(readWriter)
+		handleRequest(readWriter, conn)
 	}
 }
 
@@ -148,16 +149,13 @@ func handlePeer(rw *bufio.ReadWriter, conn net.Conn, peers *types.Peers) {
 	}
 }
 
-func handleRequest(rw *bufio.ReadWriter) {
+func handleRequest(rw *bufio.ReadWriter, conn net.Conn) {
 	request, err := http.ReadRequest(rw.Reader)
+
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Read request ERROR: %s", err)
+		log.Printf("Read request ERROR: %s", err)
 		return
 	}
-
-	log.Printf("Request: %v\t%v\n", request.URL.Path, path.Clean(request.URL.Path))
-
-	//fs := http.FileServer(http.Dir("/home/eku/go/src/local/p2pmessager/static/"))
 
 	response := http.Response{
 		StatusCode: 200,
@@ -165,20 +163,100 @@ func handleRequest(rw *bufio.ReadWriter) {
 		ProtoMinor: 1,
 	}
 
-	file, e := os.Open("./static" + path.Clean(request.URL.Path))
-	if e != nil {
-		log.Printf("error: %s", e)
+	s := conn.RemoteAddr().String()[0:3] + "REMOVEIT"
+	// TODO: сравнение среза со строкой
+	if strings.EqualFold(s, "127") || strings.EqualFold(s, "[::") {
+		response.Body = ioutil.NopCloser(strings.NewReader("php-messenger 1.0"))
+	} else {
+		processRequest(request, &response)
+	}
+
+	err = response.Write(rw)
+	if err != nil {
+		log.Printf("Write response ERROR: %s", err)
+		return
+	}
+
+	err = rw.Writer.Flush()
+	if err != nil {
+		log.Printf("Flush response ERROR: %s", err)
+		return
+	}
+}
+
+func processRequest(request *http.Request, response *http.Response) {
+	path := path.Clean(request.URL.Path)
+
+	log.Printf("Request: %v\n", path)
+
+	filePath := "./front/build" + path
+
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
 		response.StatusCode = 404
-		response.Body = ioutil.NopCloser(strings.NewReader("Not found"))
-		response.Write(rw)
-		rw.Writer.Flush()
+		response.Body = ioutil.NopCloser(strings.NewReader("Not found!"))
+		return
+	}
+
+	if info.IsDir() {
+		_, err := os.Stat(filePath + "index.html")
+		if err == nil {
+			responseFile(response, filePath+"index.html")
+			return
+		}
+
+		files, err := readDir(filePath)
+		if err != nil {
+			response.StatusCode = 500
+			// TODO: приведение ошибки к нужному типу, для получения конкретных свойств
+			response.Body = ioutil.NopCloser(strings.NewReader("Internal server error: " + err.(*os.PathError).Err.Error()))
+		}
+		filesString := strings.Join(files[:], "\n")
+		response.Body = ioutil.NopCloser(strings.NewReader("Index of " + path + ":\n\n" + filesString))
+		return
+	}
+
+	responseFile(response, filePath)
+}
+
+func responseFile(response *http.Response, fileName string) {
+	file, err := os.Open(fileName)
+
+	if os.IsPermission(err) {
+		response.StatusCode = 403
+		response.Body = ioutil.NopCloser(strings.NewReader("Forbidden"))
+		return
+	} else if err != nil {
+		response.StatusCode = 500
+		response.Body = ioutil.NopCloser(strings.NewReader("Internal server error: " + err.(*os.PathError).Err.Error()))
 		return
 	}
 
 	response.Body = file
-	response.Write(rw)
+}
 
-	rw.Writer.Flush()
+func readDir(root string) ([]string, error) {
+	var files []string
+	f, err := os.Open(root)
+	if err != nil {
+		return files, err
+	}
+	fileInfo, err := f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		return files, err
+	}
+
+	for _, file := range fileInfo {
+		// TODO: нет тернарного оператора
+		// files = append(files, file.Name() + (file.IsDir() ? "/" : ""))
+		if file.IsDir() {
+			files = append(files, file.Name()+"/")
+		} else {
+			files = append(files, file.Name())
+		}
+	}
+	return files, nil
 }
 
 //type MyWriter struct {
