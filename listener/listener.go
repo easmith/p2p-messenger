@@ -14,7 +14,15 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"github.com/gorilla/websocket"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func StartListener(port int, ch chan string, peers *types.Peers) {
 	service := fmt.Sprintf(":%v", port)
@@ -168,7 +176,13 @@ func handleRequest(rw *bufio.ReadWriter, conn net.Conn) {
 	if strings.EqualFold(s, "127") || strings.EqualFold(s, "[::") {
 		response.Body = ioutil.NopCloser(strings.NewReader("php-messenger 1.0"))
 	} else {
-		processRequest(request, &response)
+
+		if path.Clean(request.URL.Path) == "/ws" {
+			handleWs(NewWriter(conn), request)
+			return
+		} else {
+			processRequest(request, &response)
+		}
 	}
 
 	err = response.Write(rw)
@@ -219,6 +233,28 @@ func processRequest(request *http.Request, response *http.Response) {
 	responseFile(response, filePath)
 }
 
+func handleWs(w http.ResponseWriter, r *http.Request) {
+	c, err := upgrader.Upgrade(w, r, w.Header())
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
+	defer c.Close()
+	for {
+		mt, message, err := c.ReadMessage()
+		if err != nil {
+			log.Printf("ws read error: %v", err)
+			break
+		}
+		log.Printf("ws read: [%v] %s", mt, message)
+		err = c.WriteMessage(mt, append([]byte("server recv: "), message...))
+		if err != nil {
+			log.Printf("ws write error: %s", err)
+			break
+		}
+	}
+}
+
 func responseFile(response *http.Response, fileName string) {
 	file, err := os.Open(fileName)
 
@@ -259,19 +295,35 @@ func readDir(root string) ([]string, error) {
 	return files, nil
 }
 
-//type MyWriter struct {
-//	*bufio.Writer
-//}
-//
-//func (w MyWriter) Header() http.Header {
-//	return http.Header{}
-//}
-//
-//func (w MyWriter) WriteHeader(statusCode int) {
-//	w.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK")))
-//}
-//
-//func NewWriter(w *bufio.Writer) http.ResponseWriter {
-//	return &MyWriter{w}
-//}
+type MyWriter struct {
+	conn net.Conn
+}
+
+func (w MyWriter) Write(b []byte) (int, error) {
+	return w.conn.Write(b)
+}
+
+func (w MyWriter) Header() http.Header {
+	return http.Header{}
+}
+
+func (w MyWriter) WriteHeader(statusCode int) {
+	_, err := w.conn.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK")))
+	if err != nil {
+		log.Printf("WriteHeaderError: %v\n", err)
+	}
+}
+
+func (w MyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	reader := bufio.NewReader(w.conn)
+	writer := bufio.NewWriter(w.conn)
+
+	readWriter := bufio.NewReadWriter(reader, writer)
+	return w.conn, readWriter, nil
+}
+
+func NewWriter(conn net.Conn) http.ResponseWriter {
+	return &MyWriter{conn}
+}
+
 //
