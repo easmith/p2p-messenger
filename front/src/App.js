@@ -3,25 +3,38 @@ import './App.css';
 
 class App extends Component {
 
-    componentDidMount() {
 
-        var socket = new WebSocket("ws://localhost:35035/ws");
+    constructor(props, context) {
+        super(props, context);
+
+        this.state = {
+            socket: null,
+            messages: ""
+        }
+
+
+    }
+
+    componentDidMount ()  {
+
+        let socket = new WebSocket("ws://localhost:35035/ws");
+
+        this.setState({socket: socket});
 
         socket.onopen = function() {
             console.log("Соединение установлено.");
+            socket.send("hello from front")
         };
+
+        socket.onmessage = this.onMessage;
 
         socket.onclose = function(event) {
             if (event.wasClean) {
                 console.log('Соединение закрыто чисто');
             } else {
-                console.log('Обрыв соединения'); // например, "убит" процесс сервера
+                console.log('Обрыв соединения');
             }
             console.log('Код: ' + event.code + ' причина: ' + event.reason);
-        };
-
-        socket.onmessage = function(event) {
-            console.log("Получены данные " + event.data);
         };
 
         socket.onerror = function(error) {
@@ -30,13 +43,31 @@ class App extends Component {
 
     }
 
+    onMessage = (event) => {
+        this.setState({
+            messages:  this.state.messages + "\n" + event.data
+        });
+        console.log("Получены данные " + event.data);
+    }
+
     render() {
         return (
             <div className="App">
                 P2P-messenger - training
+                <pre>{this.state.messages}</pre>
+                <input type={"text"} onKeyPress={this._handleEnter}/>
             </div>
         );
     }
+
+    _handleEnter = (e) => {
+        if (e.key === 'Enter') {
+            this.state.socket.send(e.target.value);
+            e.target.value = "";
+        }
+    }
+
+
 }
 
 export default App;
