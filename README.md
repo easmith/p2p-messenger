@@ -5,6 +5,7 @@ PoC in progress...
 Update front:
 
     cd front
+    npm install
     npm run build
     
 Start messaging:
