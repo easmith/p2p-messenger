@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/easmith/p2p-messanger/listener"
-	"github.com/easmith/p2p-messanger/types"
+	"github.com/easmith/p2p-messanger/proto"
 	"log"
 	"os"
 )
@@ -23,13 +23,13 @@ func main() {
 		*port = 35035
 	}
 
-	peers := types.NewPeers()
+	proto := proto.NewProto(name)
 
 	listenerChan := make(chan string)
 
 	//go discover.Start("", 1)
 
-	go listener.StartListener(*port, listenerChan, peers)
+	go listener.StartListener(*port, listenerChan, &proto)
 
 	for {
 		log.Printf("Message from listener channel: %s", <-listenerChan)
