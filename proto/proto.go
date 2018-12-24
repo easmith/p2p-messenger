@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"golang.org/x/crypto/ed25519"
 	"net"
 	"os"
@@ -61,17 +63,30 @@ func NewProto(name string) Proto {
 	}
 }
 
+type PeerName struct {
+	Name   string
+	PubKey string
+}
+
 func (p Proto) SendName(conn net.Conn) {
-	message := NewMessage("NAME", "myName")
+	peerName, err := json.Marshal(PeerName{
+		Name:   p.Name,
+		PubKey: hex.EncodeToString(p.PubKey),
+	})
+
+	if err != nil {
+		panic(err)
+	}
+	message := NewMessage("NAME", peerName)
 	message.WriteToConn(conn)
 }
 
 func (p Proto) RequestPeers(conn net.Conn) {
-	message := NewMessage("LIST", "")
+	message := NewMessage("LIST", []byte("TODO"))
 	message.WriteToConn(conn)
 }
 
 func (p Proto) SendPeers(conn net.Conn) {
-	message := NewMessage("PEER", "")
+	message := NewMessage("PEER", []byte("TODO"))
 	message.WriteToConn(conn)
 }

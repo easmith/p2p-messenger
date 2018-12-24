@@ -2,6 +2,7 @@ package listener
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/easmith/p2p-messanger/proto"
 	"github.com/easmith/p2p-messanger/types"
@@ -84,10 +85,21 @@ func handleProto(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 		message, err := proto.ReadMessage(rw.Reader)
 		if err != nil {
 			log.Printf("Error on read Message: %v", err)
-			continue
+			return
 		}
 
-		log.Printf("new Message: %v %v %v", message.MsgId, message.Cmd, message.Length)
+		log.Printf("new Message: %s %s", message.Cmd, message.Content)
+
+		if string(message.Cmd) == "NAME" {
+			peerName := proto.PeerName{}
+			err := json.Unmarshal(message.Content, &peerName)
+			if err != nil {
+				log.Printf("error: %v", err)
+				continue
+			}
+			log.Printf("recieve name: %v", peerName)
+			p.SendName(conn)
+		}
 	}
 }
 
