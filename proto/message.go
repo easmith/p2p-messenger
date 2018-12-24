@@ -18,11 +18,11 @@ type Message struct {
 	Content []byte
 }
 
-func NewMessage(cmd string, content string) Message {
-	contentBytes := []byte(content)
+func NewMessage(cmd string, contentBytes []byte) Message {
 	contentLength := len(contentBytes)
-	if contentLength >= 2^16 {
-		contentLength = 2 ^ 16 - 1
+	log.Printf("content[%v]: %s", contentLength, contentBytes)
+	if contentLength >= (2 << 16) {
+		contentLength = (2 << 16) - 1
 		contentBytes = contentBytes[:contentLength]
 	}
 
@@ -30,7 +30,7 @@ func NewMessage(cmd string, content string) Message {
 		MsgId:   getRandomSeed(idLen)[:idLen],
 		Cmd:     []byte(cmd)[:cmdLen],
 		Length:  uint16(contentLength),
-		Content: contentBytes[:contentLength],
+		Content: contentBytes[0:contentLength],
 	}
 }
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/easmith/p2p-messanger/discover"
 	"github.com/easmith/p2p-messanger/listener"
 	"github.com/easmith/p2p-messanger/proto"
 	"log"
@@ -27,7 +28,7 @@ func main() {
 
 	listenerChan := make(chan string)
 
-	//go discover.Start("", 1)
+	go discover.StartDiscover(&proto)
 
 	go listener.StartListener(*port, listenerChan, &proto)
 
