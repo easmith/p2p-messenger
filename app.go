@@ -9,13 +9,12 @@ import (
 	"os"
 )
 
-var name string
-
 func main() {
 
 	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
-	name = *flag.String("name", "ONE", "name")
+	name := flag.String("name", "ONE", "name")
 	port := flag.Int("port", 35035, "port as port")
 
 	flag.Parse()
@@ -24,7 +23,7 @@ func main() {
 		*port = 35035
 	}
 
-	proto := proto.NewProto(name)
+	proto := proto.NewProto(*name)
 
 	listenerChan := make(chan string)
 

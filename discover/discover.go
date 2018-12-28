@@ -2,11 +2,13 @@ package discover
 
 import (
 	"bufio"
+	"encoding/hex"
 	"encoding/json"
 	"github.com/easmith/p2p-messanger/proto"
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 func StartDiscover(p *proto.Proto) {
@@ -24,6 +26,7 @@ func StartDiscover(p *proto.Proto) {
 		lastPeers = append(lastPeers, scanner.Text())
 	}
 
+	log.Printf("DISCOVER: Start peer discovering. Last seen peers: %v", len(lastPeers))
 	for _, peerAddress := range lastPeers {
 		go checkPeer(p, peerAddress)
 	}
@@ -42,9 +45,26 @@ func checkPeer(p *proto.Proto, peerAddress string) {
 
 	log.Printf("DISCOVER: Peer %s is ok: %s", peerAddress, peerName)
 
-	// TODO: добавить в пиры
+	hexPubKey, err := hex.DecodeString(peerName.PubKey)
+	if err != nil {
+		log.Printf("DISCOVERY: hex decode error: %s", err)
+	}
+	peer := &proto.Peer{
+		PubKey:    hexPubKey,
+		Addr:      "addr",
+		Conn:      &conn,
+		Name:      peerName.Name,
+		FirstSeen: time.Now().String(),
+		LastSeen:  time.Now().String(),
+		Peers:     proto.NewPeers(),
+	}
+	p.Peers.Put(peer)
+
+	proto.ConnListener(conn, p)
 
 	// TODO: ping-pong
+	// TODO: request peers
+	// TODO: listenPeer
 }
 
 func handShake(p *proto.Proto, conn net.Conn) *proto.PeerName {

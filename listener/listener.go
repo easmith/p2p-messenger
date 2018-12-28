@@ -2,7 +2,7 @@ package listener
 
 import (
 	"bufio"
-	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"github.com/easmith/p2p-messanger/proto"
 	"github.com/easmith/p2p-messanger/types"
@@ -52,7 +52,7 @@ func StartListener(port int, ch chan string, proto *proto.Proto) {
 	ch <- "done"
 }
 
-func onConnection(conn net.Conn, proto *proto.Proto) {
+func onConnection(conn net.Conn, p *proto.Proto) {
 	defer func() {
 		//proto.Peers.(conn)
 		conn.Close()
@@ -73,37 +73,14 @@ func onConnection(conn net.Conn, proto *proto.Proto) {
 
 	if types.ItIsHttp(buf) {
 		log.Println("Try request")
-		handleHttp(readWriter, conn)
+		handleHttp(readWriter, conn, p)
 	} else {
 		log.Println("Try proto")
-		handleProto(readWriter, conn, proto)
+		proto.HandleProto(readWriter, conn, p)
 	}
 }
 
-func handleProto(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
-	for {
-		message, err := proto.ReadMessage(rw.Reader)
-		if err != nil {
-			log.Printf("Error on read Message: %v", err)
-			return
-		}
-
-		log.Printf("new Message: %s %s", message.Cmd, message.Content)
-
-		if string(message.Cmd) == "NAME" {
-			peerName := proto.PeerName{}
-			err := json.Unmarshal(message.Content, &peerName)
-			if err != nil {
-				log.Printf("error: %v", err)
-				continue
-			}
-			log.Printf("recieve name: %v", peerName)
-			p.SendName(conn)
-		}
-	}
-}
-
-func handleHttp(rw *bufio.ReadWriter, conn net.Conn) {
+func handleHttp(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 	request, err := http.ReadRequest(rw.Reader)
 
 	if err != nil {
@@ -124,7 +101,7 @@ func handleHttp(rw *bufio.ReadWriter, conn net.Conn) {
 	} else {
 
 		if path.Clean(request.URL.Path) == "/ws" {
-			handleWs(NewWriter(conn), request)
+			handleWs(NewWriter(conn), request, p)
 			return
 		} else {
 			processRequest(request, &response)
@@ -146,7 +123,7 @@ func handleHttp(rw *bufio.ReadWriter, conn net.Conn) {
 	}
 }
 
-func handleWs(w http.ResponseWriter, r *http.Request) {
+func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 	c, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
 		log.Print("upgrade:", err)
@@ -160,10 +137,29 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		log.Printf("ws read: [%v] %s", mt, message)
-		err = c.WriteMessage(mt, append([]byte("server recv: "), message...))
-		if err != nil {
-			log.Printf("ws write error: %s", err)
-			break
+		if string(message) == "LIST" {
+			for _, v := range *p.Peers.List() {
+				writeToWs(c, mt, []byte(v.String()))
+			}
 		}
+		if string(message[0:4]) == "MESS" {
+
+			hexPubKey, err := hex.DecodeString(string(message[4:68]))
+			if err != nil {
+				log.Printf("LISTENER: decode error: %s", err)
+				continue
+			}
+			peer, found := p.Peers.Get(string(hexPubKey))
+			if found {
+				p.SendMessage(*peer.Conn, string(message[68:]))
+			}
+		}
+	}
+}
+
+func writeToWs(c *websocket.Conn, mt int, message []byte) {
+	err := c.WriteMessage(mt, append([]byte("server recv: "), message...))
+	if err != nil {
+		log.Printf("ws write error: %s", err)
 	}
 }
