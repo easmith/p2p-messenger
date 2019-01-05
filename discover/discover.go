@@ -19,7 +19,7 @@ func StartDiscover(p *proto.Proto) {
 		return
 	}
 
-	lastPeers := []string{}
+	var lastPeers []string
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -63,6 +63,7 @@ func checkPeer(p *proto.Proto, peerAddress string) {
 	proto.ConnListener(conn, p)
 
 	// TODO: ping-pong
+
 	// TODO: request peers
 	// TODO: listenPeer
 }

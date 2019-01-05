@@ -12,26 +12,10 @@ var idLen = 16
 var cmdLen = 4
 
 type Message struct {
-	MsgId   []byte
 	Cmd     []byte
+	MsgId   []byte
 	Length  uint16
 	Content []byte
-}
-
-func NewMessage(cmd string, contentBytes []byte) Message {
-	contentLength := len(contentBytes)
-	log.Printf("content[%v]: %s", contentLength, contentBytes)
-	if contentLength >= (2 << 16) {
-		contentLength = (2 << 16) - 1
-		contentBytes = contentBytes[:contentLength]
-	}
-
-	return Message{
-		MsgId:   getRandomSeed(idLen)[:idLen],
-		Cmd:     []byte(cmd)[:cmdLen],
-		Length:  uint16(contentLength),
-		Content: contentBytes[0:contentLength],
-	}
 }
 
 func getRandomSeed(l int) []byte {
@@ -43,11 +27,28 @@ func getRandomSeed(l int) []byte {
 	return seed
 }
 
-func (m Message) Serialize() []byte {
-	result := make([]byte, 0, idLen+cmdLen+len(m.Content))
+func NewMessage(cmd string, contentBytes []byte) Message {
+	contentLength := len(contentBytes)
+	log.Printf("content[%v]: %s", contentLength, contentBytes)
+	if contentLength >= (2 << 16) {
+		contentLength = (2 << 16) - 1
+		contentBytes = contentBytes[:contentLength]
+	}
 
-	result = append(result, m.MsgId[0:idLen]...)
+	return Message{
+		Cmd:     []byte(cmd)[:cmdLen],
+		MsgId:   getRandomSeed(idLen)[:idLen],
+		Length:  uint16(contentLength),
+		Content: contentBytes[0:contentLength],
+	}
+}
+
+func (m Message) Serialize() []byte {
+	result := make([]byte, 0, cmdLen+idLen+len(m.Content))
+
+	// TODO: неудобная конкатенация
 	result = append(result, m.Cmd[0:cmdLen]...)
+	result = append(result, m.MsgId[0:idLen]...)
 
 	contentLengthBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(contentLengthBytes, m.Length)
@@ -63,8 +64,8 @@ func UnSerialize(b []byte) Message {
 	contentLength := binary.BigEndian.Uint16(b[idLen+cmdLen : idLen+cmdLen+2])
 
 	return Message{
-		MsgId:   b[0:idLen],
-		Cmd:     b[idLen : idLen+cmdLen],
+		Cmd:     b[0:cmdLen],
+		MsgId:   b[cmdLen : cmdLen+idLen],
 		Length:  contentLength,
 		Content: b[idLen+cmdLen+2 : idLen+cmdLen+2+int(contentLength)],
 	}
@@ -74,12 +75,12 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 	msgId := make([]byte, idLen)
 	cmd := make([]byte, cmdLen)
 	contentLength := make([]byte, 2)
-	_, err := reader.Read(msgId)
+	_, err := reader.Read(cmd)
 	// TODO: Много лишнего кода при обработке ошибок
 	if err != nil {
 		return nil, err
 	}
-	_, err = reader.Read(cmd)
+	_, err = reader.Read(msgId)
 	if err != nil {
 		return nil, err
 	}
