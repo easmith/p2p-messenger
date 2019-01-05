@@ -12,20 +12,6 @@ import (
 
 type Addr string
 
-type Peer struct {
-	PubKey    ed25519.PublicKey
-	Addr      Addr
-	Conn      *net.Conn
-	Name      string
-	FirstSeen string
-	LastSeen  string
-	Peers     *Peers
-}
-
-func (p Peer) String() string {
-	return p.Name + "=" + hex.EncodeToString(p.PubKey)
-}
-
 type Proto struct {
 	Name    string
 	Peers   *Peers
@@ -66,11 +52,6 @@ func NewProto(name string) Proto {
 		PubKey:  publicKey,
 		privKey: privateKey,
 	}
-}
-
-type PeerName struct {
-	Name   string
-	PubKey string
 }
 
 func (p Proto) SendName(conn net.Conn) {
