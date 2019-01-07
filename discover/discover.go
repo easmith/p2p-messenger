@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/easmith/p2p-messanger/proto"
+	"github.com/easmith/p2p-messenger/proto"
 	"log"
 	"net"
 	"os"

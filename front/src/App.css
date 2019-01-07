@@ -1,0 +1,11 @@
+.peers {
+    overflow: auto;
+}
+
+.peers .list-group-item {
+    padding: 0px;
+}
+
+.messages {
+    overflow: auto;
+}

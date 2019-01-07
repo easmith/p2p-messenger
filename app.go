@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/easmith/p2p-messanger/discover"
-	"github.com/easmith/p2p-messanger/listener"
-	"github.com/easmith/p2p-messanger/proto"
+	"github.com/easmith/p2p-messenger/discover"
+	"github.com/easmith/p2p-messenger/listener"
+	"github.com/easmith/p2p-messenger/proto"
 	"log"
 	"os"
 )

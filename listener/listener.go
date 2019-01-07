@@ -2,11 +2,9 @@ package listener
 
 import (
 	"bufio"
-	"encoding/hex"
 	"fmt"
-	"github.com/easmith/p2p-messanger/proto"
-	"github.com/easmith/p2p-messanger/types"
-	"github.com/gorilla/websocket"
+	"github.com/easmith/p2p-messenger/proto"
+	"github.com/easmith/p2p-messenger/types"
 	"io/ioutil"
 	"log"
 	"net"
@@ -15,12 +13,6 @@ import (
 	"path"
 	"strings"
 )
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
 
 func StartListener(port int, ch chan string, proto *proto.Proto) {
 	service := fmt.Sprintf(":%v", port)
@@ -120,46 +112,5 @@ func handleHttp(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 	if err != nil {
 		log.Printf("Flush response ERROR: %s", err)
 		return
-	}
-}
-
-func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
-	c, err := upgrader.Upgrade(w, r, w.Header())
-	if err != nil {
-		log.Print("upgrade:", err)
-		return
-	}
-	defer c.Close()
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Printf("ws read error: %v", err)
-			break
-		}
-		log.Printf("ws read: [%v] %s", mt, message)
-		if string(message) == "LIST" {
-			for _, v := range *p.Peers.List() {
-				writeToWs(c, mt, []byte(v.String()))
-			}
-		}
-		if string(message[0:4]) == "MESS" {
-
-			hexPubKey, err := hex.DecodeString(string(message[4:68]))
-			if err != nil {
-				log.Printf("LISTENER: decode error: %s", err)
-				continue
-			}
-			peer, found := p.Peers.Get(string(hexPubKey))
-			if found {
-				p.SendMessage(*peer.Conn, string(message[68:]))
-			}
-		}
-	}
-}
-
-func writeToWs(c *websocket.Conn, mt int, message []byte) {
-	err := c.WriteMessage(mt, append([]byte("server recv: "), message...))
-	if err != nil {
-		log.Printf("ws write error: %s", err)
 	}
 }

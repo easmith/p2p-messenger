@@ -57,6 +57,18 @@ func (p Peers) Get(key string) (peer *Peer, found bool) {
 	return
 }
 
-func (p Peers) List() *map[string]*Peer {
-	return &p.peers
+func (p Peers) PeerList() *PeerList {
+
+	peerList := &PeerList{
+		Cmd:   "peers",
+		Peers: make([]PeerName, len(p.peers))}
+
+	for _, el := range p.peers {
+		peerList.Peers = append(peerList.Peers, PeerName{
+			Name:   el.Name,
+			PubKey: hex.EncodeToString(el.PubKey),
+		})
+	}
+
+	return peerList
 }
