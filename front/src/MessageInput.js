@@ -14,10 +14,10 @@ export default class MessageInput extends Component {
 
     render () {
         if (this.props.interlocutor == null) {
-            return <div>Select peer</div>
+            return <div className={"mt-3"}>Select peer</div>
         }
         return (
-            <InputGroup>
+            <InputGroup className={"mt-3"}>
                 <InputGroupAddon addonType="prepend">
                     <Button color="danger">{this.props.interlocutor.name}</Button>
                 </InputGroupAddon>
