@@ -21,7 +21,7 @@ export default class Header extends Component {
     render() {
         return (
             <header>
-                <Navbar color={"dark"} dark inverse >
+                <Navbar color={"dark"} dark >
                     <NavbarBrand href="/" className="mr-auto">PeerToPeer Messenger</NavbarBrand>
                     <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
                     <Collapse isOpen={!this.state.collapsed} navbar>
