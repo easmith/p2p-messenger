@@ -1,3 +1,7 @@
+#root {
+    background: gray;
+}
+
 .peers {
     overflow: auto;
 }
@@ -7,5 +11,7 @@
 }
 
 .messages {
+    background: lightgrey;
     overflow: auto;
+    height: 100%
 }

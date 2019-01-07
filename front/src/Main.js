@@ -3,6 +3,7 @@ import {Button, Col, Container, Row} from "reactstrap";
 
 import Peers from "./Peers";
 import MessageInput from "./MessageInput";
+import Messages from "./Messages";
 
 export default class Main extends Component {
 
@@ -58,7 +59,12 @@ export default class Main extends Component {
         }
 
         if (parsedMessage.cmd === "MESS") {
-            this.setState({message: parsedMessage.content})
+            this.setState(
+                {
+                    messages: [...this.state.messages, parsedMessage.content]
+                }
+            )
+            //{message: parsedMessage.content})
         }
 
 
@@ -87,7 +93,7 @@ export default class Main extends Component {
     render() {
         let interlocutorName = this.state.interlocutor ? " with " + this.state.interlocutor.name : "";
         return (
-            <Container className={"vh-100 mt-3"} fluid>
+            <Container className={"vh-100"} fluid style={{marginTop:"-80px", paddingTop:"90px"}}>
                 <Row>
                     <Col className={"border-right"}>
                         <h3>Peers <Button color="info" size={"sm"} onClick={this.updatePeers}>update</Button></h3>
@@ -101,9 +107,7 @@ export default class Main extends Component {
                         <Peers peers={this.state.peers} onSelectPeer={this.selectPeer}/>
                     </Col>
                     <Col xs={9}>
-                        <pre style={{border: "1px solid red", height: "100%"}}>
-                            {this.state.messages}
-                        </pre>
+                        <Messages messages={this.state.messages}/>
                         <MessageInput interlocutor={this.state.interlocutor} onSendMessage={this.sendMessage}/>
                     </Col>
                 </Row>

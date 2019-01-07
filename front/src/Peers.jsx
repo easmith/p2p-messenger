@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Badge, Button, Col, ListGroup, ListGroupItem} from "reactstrap";
+import {Badge, Button, ListGroup, ListGroupItem} from "reactstrap";
 import PropTypes from 'prop-types';
 
 
@@ -22,7 +22,7 @@ export default class Peers extends Component {
             <ListGroup className={"peers"}>
                 {this.props.peers.map(p => {
                     return (
-                        <ListGroupItem key={p.id}>
+                        <ListGroupItem color={"secondary"} key={p.id}>
                             <Button color={"default"} onClick={this.selectItem} data-name={p.name} data-id={p.id}>{p.name}</Button>
                             <Badge className={"float-right"}></Badge>
                         </ListGroupItem>
