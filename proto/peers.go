@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"golang.org/x/crypto/ed25519"
+	"log"
 	"net"
 	"sync"
 )
@@ -60,8 +61,10 @@ func (p Peers) Get(key string) (peer *Peer, found bool) {
 func (p Peers) PeerList() *PeerList {
 
 	peerList := &PeerList{
-		Cmd:   "peers",
-		Peers: make([]PeerName, len(p.peers))}
+		Cmd:   "PEERS",
+		Peers: []PeerName{}}
+
+	log.Printf("total : %v, %v", len(p.peers), p.peers)
 
 	for _, el := range p.peers {
 		peerList.Peers = append(peerList.Peers, PeerName{

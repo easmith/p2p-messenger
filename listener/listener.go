@@ -56,12 +56,10 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 	readWriter := bufio.NewReadWriter(reader, writer)
 
 	buf, err := readWriter.Peek(4)
-	log.Printf("Start read peak")
 	if err != nil {
 		log.Printf("Read peak ERROR: %s", err)
 		return
 	}
-	log.Printf("Stop read peak: %v", string(buf))
 
 	if types.ItIsHttp(buf) {
 		log.Println("Try request")

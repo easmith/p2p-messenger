@@ -30,7 +30,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 		}
 		log.Printf("ws read: [%v] %s", mt, message)
 
-		decodedMessage := &proto.WsMessage{}
+		decodedMessage := &proto.WsCmd{}
 		err = json.Unmarshal(message, decodedMessage)
 
 		if err != nil {
@@ -50,23 +50,24 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 
 			writeToWs(c, mt, peerListJson)
 		}
-		if string(message[0:4]) == "MESS" {
+		if decodedMessage.Cmd == "MESS" {
 
-			hexPubKey, err := hex.DecodeString(string(message[4:68]))
+			hexPubKey, err := hex.DecodeString(decodedMessage.To)
 			if err != nil {
-				log.Printf("LISTENER: decode error: %s", err)
+				log.Printf("decode error: %s", err)
 				continue
 			}
 			peer, found := p.Peers.Get(string(hexPubKey))
 			if found {
-				p.SendMessage(*peer.Conn, string(message[68:]))
+				writeToWs(c, mt, message)
+				p.SendMessage(*peer.Conn, decodedMessage.Content)
 			}
 		}
 	}
 }
 
 func writeToWs(c *websocket.Conn, mt int, message []byte) {
-	err := c.WriteMessage(mt, append([]byte("server recv: "), message...))
+	err := c.WriteMessage(mt, message)
 	if err != nil {
 		log.Printf("ws write error: %s", err)
 	}

@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
-import {Button, Col, Container, Input, InputGroup, InputGroupAddon, Row} from "reactstrap";
+import {Button, Col, Container, Row} from "reactstrap";
 
 import Peers from "./Peers";
+import MessageInput from "./MessageInput";
 
 export default class Main extends Component {
 
@@ -11,87 +12,99 @@ export default class Main extends Component {
 
         this.state = {
             socket: null,
-            messages: ""
+            interlocutor: null,
+            peers: [],
+            messages: [],
         }
     }
 
-    componentDidMount ()  {
+    componentDidMount () {
         let socket = new WebSocket("ws://localhost:35035/ws");
 
-        this.setState({socket: socket});
+        this.setState({socket: socket}, () => {
+            socket.onopen = function() {
+                console.log("Соединение установлено.");
+                socket.send(JSON.stringify({cmd:"PEERS"}));
+            };
 
-        socket.onopen = function() {
-            console.log("Соединение установлено.");
-            socket.send(JSON.stringify({cmd: "HELLO"}))
-        };
+            socket.onmessage = this.onMessage;
 
-        socket.onmessage = this.onMessage;
+            socket.onclose = function(event) {
+                if (event.wasClean) {
+                    console.log('Соединение закрыто чисто');
+                } else {
+                    console.log('Обрыв соединения');
+                }
+                console.log('Код: ' + event.code + ' причина: ' + event.reason);
+            };
 
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                console.log('Соединение закрыто чисто');
-            } else {
-                console.log('Обрыв соединения');
-            }
-            console.log('Код: ' + event.code + ' причина: ' + event.reason);
-        };
-
-        socket.onerror = function(error) {
-            console.log("Ошибка " + error.message);
-        };
-
+            socket.onerror = function(error) {
+                console.log("Ошибка " + error.message);
+            };
+        });
     }
 
     onMessage = (event) => {
-        let parsedMessage = JSON.parse(event.data);
-        this.setState({
-            messages:  this.state.messages + "\n" + parsedMessage.cmd
-        });
-
         console.log("Получены данные " + event.data);
-    }
+        let parsedMessage = JSON.parse(event.data);
 
-
-    _handleEnter = (e) => {
-        if (e.key === 'Enter') {
-            this.state.socket.send(e.target.value);
-            e.target.value = "";
+        if (!parsedMessage.cmd) {
+            console.error("something wrong with data");
+            return;
         }
+
+        if (parsedMessage.cmd === "PEERS") {
+            this.setState({peers: parsedMessage.peers})
+        }
+
+        if (parsedMessage.cmd === "MESS") {
+            this.setState({message: parsedMessage.content})
+        }
+
+
     };
 
     updatePeers = () => {
         this.state.socket.send(JSON.stringify({cmd:"PEERS"}));
     };
 
+    sendMessage = (msg) => {
+        let cmd = JSON.stringify({
+            cmd: "MESS",
+            to: this.state.interlocutor.id,
+            content: msg
+        });
+        this.state.socket.send(cmd);
+    };
+
+    selectPeer = (peer) => {
+        this.setState({
+            interlocutor: peer
+        })
+    };
+
 
     render() {
+        let interlocutorName = this.state.interlocutor ? " with " + this.state.interlocutor.name : "";
         return (
-            <Container className={"vh-100 mt-3"}>
+            <Container className={"vh-100 mt-3"} fluid>
                 <Row>
-                    <Col>
+                    <Col className={"border-right"}>
                         <h3>Peers <Button color="info" size={"sm"} onClick={this.updatePeers}>update</Button></h3>
                     </Col>
                     <Col xs={9}>
-                        <h3>Chat</h3>
+                        <h3>Chat {interlocutorName}</h3>
                     </Col>
                 </Row>
                 <Row className={"h-75"}>
-                    <Peers peers={[{name:"name", id: "id"}]}/>
-                    <Col xs={9}>
-                        <pre style={{border: "1px solid red"}}>{this.state.messages}</pre>
+                    <Col xs={3} className={"border-right"}>
+                        <Peers peers={this.state.peers} onSelectPeer={this.selectPeer}/>
                     </Col>
-                </Row>
-                <Row className={"mt-3"}>
-                    <Col>
-                        <InputGroup>
-                            <InputGroupAddon addonType="prepend">
-                                <Button color="danger">Select peer</Button>
-                            </InputGroupAddon>
-                            <Input placeholder="Type a message and press Enter" onKeyPress={this._handleEnter} />
-                            <InputGroupAddon addonType="append">
-                                <Button color="success">Send!</Button>
-                            </InputGroupAddon>
-                        </InputGroup>
+                    <Col xs={9}>
+                        <pre style={{border: "1px solid red", height: "100%"}}>
+                            {this.state.messages}
+                        </pre>
+                        <MessageInput interlocutor={this.state.interlocutor} onSendMessage={this.sendMessage}/>
                     </Col>
                 </Row>
             </Container>

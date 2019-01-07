@@ -10,7 +10,7 @@ type PeerList struct {
 	Peers []PeerName `json:"peers"`
 }
 
-type WsMessage struct {
+type WsCmd struct {
 	Cmd     string `json:"cmd"`
 	To      string `json:"to"`
 	Content string `json:"content"`

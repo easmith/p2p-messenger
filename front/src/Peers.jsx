@@ -8,21 +8,27 @@ export default class Peers extends Component {
         peers: []
     };
 
+    selectItem = (peer) => {
+        console.log(peer.target.getAttribute("data-id"));
+
+        this.props.onSelectPeer({
+            id: peer.target.getAttribute("data-id"),
+            name: peer.target.getAttribute("data-name")
+        });
+    };
+
     render() {
         return (
-            <Col xs={3}>
-                <ListGroup className={"peers"}>
-                    {this.props.peers.map(p => {
-                        return (
-                            <ListGroupItem key={p.id}>
-                                <Button color={"default"}>{p.name}</Button>
-                                <Badge className={"float-right"}></Badge>
-                            </ListGroupItem>
-                        )
-                    })}
-                </ListGroup>
-            </Col>
-
+            <ListGroup className={"peers"}>
+                {this.props.peers.map(p => {
+                    return (
+                        <ListGroupItem key={p.id}>
+                            <Button color={"default"} onClick={this.selectItem} data-name={p.name} data-id={p.id}>{p.name}</Button>
+                            <Badge className={"float-right"}></Badge>
+                        </ListGroupItem>
+                    )
+                })}
+            </ListGroup>
         )
     }
 }
