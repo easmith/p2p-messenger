@@ -103,6 +103,7 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 }
 
 func (m Message) WriteToConn(conn net.Conn) {
+	log.Printf("Proto write: %s", m.Cmd)
 	_, err := conn.Write(m.Serialize())
 	if err != nil {
 		log.Printf("ERROR on write message: %v", err)

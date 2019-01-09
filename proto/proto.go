@@ -8,9 +8,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"reflect"
 )
-
-type Addr string
 
 type Proto struct {
 	Name    string
@@ -82,30 +81,63 @@ func (p Proto) SendMessage(conn net.Conn, msg string) {
 	message.WriteToConn(conn)
 }
 
-func ConnListener(conn net.Conn, p *Proto) {
-	readWriter := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
-	HandleProto(readWriter, conn, p)
+func (p Proto) RegisterPeer(peer *Peer) *Peer {
+	// TODO: сравнение через equal
+	if reflect.DeepEqual(peer.PubKey, p.PubKey) {
+		return nil
+	}
+
+	p.Peers.Put(peer)
+
+	log.Printf("Register new peer: %s", peer.Name)
+
+	return peer
 }
 
-func HandleProto(rw *bufio.ReadWriter, conn net.Conn, p *Proto) {
+func (p Proto) UnregisterPeer(peer *Peer) {
+	p.Peers.Remove(peer)
+	log.Printf("UnRegister peer: %s", peer.Name)
+}
+
+func (p Proto) PeerListener(peer *Peer) {
+	readWriter := bufio.NewReadWriter(bufio.NewReader(*peer.Conn), bufio.NewWriter(*peer.Conn))
+	p.HandleProto(readWriter, *peer.Conn)
+}
+
+func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
+	var peer *Peer
 	for {
 		message, err := ReadMessage(rw.Reader)
 		if err != nil {
 			log.Printf("Error on read Message: %v", err)
-			return
+			break
 		}
 
-		log.Printf("new Message: %s %s", message.Cmd, message.Content)
-
-		if string(message.Cmd) == "NAME" {
-			peerName := PeerName{}
-			err := json.Unmarshal(message.Content, &peerName)
-			if err != nil {
-				log.Printf("error: %v", err)
-				continue
+		switch string(message.Cmd) {
+		case "NAME":
+			{
+				newPeer := CreatePeer(message, conn)
+				if newPeer != nil {
+					if peer != nil {
+						p.UnregisterPeer(peer)
+					}
+					p.RegisterPeer(newPeer)
+					peer = newPeer
+				}
+				p.SendName(conn)
 			}
-			log.Printf("recieve name: %v", peerName)
-			p.SendName(conn)
+		case "MESS":
+			{
+				log.Printf("NEW MESSAGE %s", message.Content)
+			}
+		default:
+			log.Printf("PROTO MESSAGE %v %v %v", message.Cmd, message.MsgId, message.Content)
 		}
+
 	}
+
+	if peer != nil {
+		p.UnregisterPeer(peer)
+	}
+
 }
