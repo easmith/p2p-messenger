@@ -20,7 +20,7 @@ export default class Main extends Component {
     }
 
     componentDidMount () {
-        let socket = new WebSocket("ws://localhost:35035/ws");
+        let socket = new WebSocket("ws://"+ document.location.hostname+(document.location.port ? ':'+document.location.port : '') + "/ws");
 
         this.setState({socket: socket}, () => {
             socket.onopen = function() {

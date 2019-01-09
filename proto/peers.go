@@ -11,7 +11,7 @@ import (
 
 type Peer struct {
 	PubKey    ed25519.PublicKey
-	Addr      Addr
+	Addr      string
 	Conn      *net.Conn
 	Name      string
 	FirstSeen string
@@ -55,6 +55,14 @@ func (p Peers) Get(key string) (peer *Peer, found bool) {
 	defer p.RUnlock()
 
 	peer, found = p.peers[key]
+	return
+}
+
+func (p Peers) Remove(peer *Peer) (found bool) {
+	p.RLock()
+	defer p.RUnlock()
+
+	delete(p.peers, string(peer.PubKey))
 	return
 }
 

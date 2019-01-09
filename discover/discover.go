@@ -2,13 +2,10 @@ package discover
 
 import (
 	"bufio"
-	"encoding/hex"
-	"encoding/json"
 	"github.com/easmith/p2p-messenger/proto"
 	"log"
 	"net"
 	"os"
-	"time"
 )
 
 func StartDiscover(p *proto.Proto) {
@@ -35,59 +32,42 @@ func StartDiscover(p *proto.Proto) {
 func checkPeer(p *proto.Proto, peerAddress string) {
 	conn, err := net.Dial("tcp", peerAddress)
 	if err != nil {
-		log.Printf("DISCOVER: Dial Error: " + err.Error())
+		log.Printf("Dial ERROR: " + err.Error())
 		return
 	}
 
 	defer conn.Close()
 
-	peerName := handShake(p, conn)
+	peer := handShake(p, conn)
 
-	log.Printf("DISCOVER: Peer %s is ok: %s", peerAddress, peerName)
-
-	hexPubKey, err := hex.DecodeString(peerName.PubKey)
-	if err != nil {
-		log.Printf("DISCOVERY: hex decode error: %s", err)
+	if peer == nil {
+		log.Printf("Fail on handshake")
+		return
 	}
-	peer := &proto.Peer{
-		PubKey:    hexPubKey,
-		Addr:      "addr",
-		Conn:      &conn,
-		Name:      peerName.Name,
-		FirstSeen: time.Now().String(),
-		LastSeen:  time.Now().String(),
-		Peers:     proto.NewPeers(),
-	}
-	p.Peers.Put(peer)
 
-	proto.ConnListener(conn, p)
+	p.PeerListener(peer)
+
+	p.UnregisterPeer(peer)
 
 	// TODO: ping-pong
-
-	// TODO: request peers
-	// TODO: listenPeer
 }
 
-func handShake(p *proto.Proto, conn net.Conn) *proto.PeerName {
+func handShake(p *proto.Proto, conn net.Conn) *proto.Peer {
 
 	p.SendName(conn)
 
 	message, err := proto.ReadMessage(bufio.NewReader(conn))
 	if err != nil {
-		log.Printf("DISCOVER: Error on read Message: %s", err)
+		log.Printf("Error on read Message: %s", err)
 		return nil
 	}
 
-	log.Printf("DISCOVER: Peer Message: %s %s", message.Cmd, message.Content)
-
-	peerName := proto.PeerName{}
-	if string(message.Cmd) == "NAME" {
-		err := json.Unmarshal(message.Content, &peerName)
-		if err != nil {
-			log.Printf("DISCOVER: error: %v", err)
-			return nil
-		}
+	peer := proto.CreatePeer(message, conn)
+	if peer != nil {
+		p.RegisterPeer(peer)
 	}
 
-	return &peerName
+	// TODO: request peers
+
+	return peer
 }

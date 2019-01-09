@@ -37,7 +37,6 @@ func StartListener(port int, ch chan string, proto *proto.Proto) {
 			continue
 		}
 		// TODO: общение через канал
-		ch <- "new connection: " + conn.RemoteAddr().String()
 		go onConnection(conn, proto)
 	}
 
@@ -49,6 +48,8 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 		//proto.Peers.(conn)
 		conn.Close()
 	}()
+
+	log.Printf("New connection from: %v", conn.RemoteAddr().String())
 
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
@@ -62,11 +63,9 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 	}
 
 	if types.ItIsHttp(buf) {
-		log.Println("Try request")
 		handleHttp(readWriter, conn, p)
 	} else {
-		log.Println("Try proto")
-		proto.HandleProto(readWriter, conn, p)
+		p.HandleProto(readWriter, conn)
 	}
 }
 
