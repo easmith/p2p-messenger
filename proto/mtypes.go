@@ -5,13 +5,17 @@ type PeerName struct {
 	PubKey string `json:"id"`
 }
 
+type WsCmd struct {
+	Cmd string `json:"cmd"`
+}
+
 type PeerList struct {
-	Cmd   string     `json:"cmd"`
+	WsCmd
 	Peers []PeerName `json:"peers"`
 }
 
-type WsCmd struct {
-	Cmd     string `json:"cmd"`
+type WsMessage struct {
+	WsCmd
 	To      string `json:"to"`
 	Content string `json:"content"`
 }

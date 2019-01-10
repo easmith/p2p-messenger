@@ -25,6 +25,8 @@ func main() {
 		*port = 35035
 	}
 
+	waitClose := make(chan int)
+
 	proto := proto.NewProto(*name)
 
 	go discover.StartDiscover(proto)
@@ -32,6 +34,6 @@ func main() {
 	go listener.StartListener(*port, proto)
 
 	for {
-		log.Printf("Envelope from listener channel: %s", <-proto.Broker)
+		log.Printf("Close: %v", <-waitClose)
 	}
 }
