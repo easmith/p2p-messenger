@@ -17,7 +17,7 @@ type Proto struct {
 	Peers   *Peers
 	PubKey  ed25519.PublicKey
 	privKey ed25519.PrivateKey
-	Broker  chan Envelope
+	Broker  chan *Envelope
 }
 
 func (p Proto) String() string {
@@ -57,7 +57,7 @@ func NewProto(name string) *Proto {
 		Peers:   NewPeers(),
 		PubKey:  publicKey,
 		privKey: privateKey,
-		Broker:  make(chan Envelope),
+		Broker:  make(chan *Envelope),
 	}
 }
 
@@ -123,16 +123,16 @@ func (p Proto) PeerListener(peer *Peer) {
 func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 	var peer *Peer
 	for {
-		message, err := ReadEnvelope(rw.Reader)
+		envelope, err := ReadEnvelope(rw.Reader)
 		if err != nil {
 			log.Printf("Error on read Envelope: %v", err)
 			break
 		}
 
-		switch string(message.Cmd) {
+		switch string(envelope.Cmd) {
 		case "NAME":
 			{
-				newPeer := CreatePeer(message, conn)
+				newPeer := CreatePeer(envelope, conn)
 				if newPeer != nil {
 					if peer != nil {
 						p.UnregisterPeer(peer)
@@ -144,10 +144,11 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 			}
 		case "MESS":
 			{
-				log.Printf("NEW MESSAGE %s", message.Content)
+				p.Broker <- envelope
+				log.Printf("NEW MESSAGE %s", envelope.Content)
 			}
 		default:
-			log.Printf("PROTO MESSAGE %v %v %v", message.Cmd, message.Id, message.Content)
+			log.Printf("PROTO MESSAGE %v %v %v", envelope.Cmd, envelope.Id, envelope.Content)
 		}
 
 	}

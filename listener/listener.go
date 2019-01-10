@@ -39,7 +39,6 @@ func StartListener(port int, proto *proto.Proto) {
 		go onConnection(conn, proto)
 	}
 
-	ch <- "done"
 }
 
 // Обработка входящего соединения
@@ -86,7 +85,7 @@ func handleHttp(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 	s := conn.RemoteAddr().String()[0:3] + "REMOVE_IT"
 	// TODO: сравнение среза со строкой
 	if strings.EqualFold(s, "127") || strings.EqualFold(s, "[::") {
-		response.Body = ioutil.NopCloser(strings.NewReader("php-messenger 1.0"))
+		response.Body = ioutil.NopCloser(strings.NewReader("Peer To Peer Messenger. see https://github.com/easmith/p2p-messenger"))
 	} else {
 
 		if path.Clean(request.URL.Path) == "/ws" {

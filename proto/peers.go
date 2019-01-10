@@ -69,10 +69,13 @@ func (p Peers) Remove(peer *Peer) (found bool) {
 func (p Peers) PeerList() *PeerList {
 
 	peerList := &PeerList{
-		Cmd:   "PEERS",
-		Peers: []PeerName{}}
+		WsCmd: WsCmd{
+			Cmd: "PEERS",
+		},
+		Peers: []PeerName{},
+	}
 
-	log.Printf("total : %v, %v", len(p.peers), p.peers)
+	log.Printf("total peers: %v", len(p.peers))
 
 	for _, el := range p.peers {
 		peerList.Peers = append(peerList.Peers, PeerName{
