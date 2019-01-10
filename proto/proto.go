@@ -11,11 +11,17 @@ import (
 	"reflect"
 )
 
+//Proto Ядро протокола
 type Proto struct {
 	Name    string
 	Peers   *Peers
 	PubKey  ed25519.PublicKey
 	privKey ed25519.PrivateKey
+	Broker  chan Envelope
+}
+
+func (p Proto) String() string {
+	return "proto: " + hex.EncodeToString(p.PubKey) + ": " + p.Name
 }
 
 func getSeed() []byte {
@@ -39,20 +45,23 @@ func getSeed() []byte {
 	return seed
 }
 
-func NewProto(name string) Proto {
+//NewProto - создание экземпляра ядра протокола
+func NewProto(name string) *Proto {
 	//privateKey := ed25519.NewKeyFromSeed(getSeed())
 	publicKey, privateKey, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		panic(err)
 	}
-	return Proto{
+	return &Proto{
 		Name:    name,
 		Peers:   NewPeers(),
 		PubKey:  publicKey,
 		privKey: privateKey,
+		Broker:  make(chan Envelope),
 	}
 }
 
+//SendName Отправка своего имени в сокет
 func (p Proto) SendName(conn net.Conn) {
 	peerName, err := json.Marshal(PeerName{
 		Name:   p.Name,
@@ -62,25 +71,29 @@ func (p Proto) SendName(conn net.Conn) {
 	if err != nil {
 		panic(err)
 	}
-	message := NewMessage("NAME", peerName)
+	message := NewEnvelope("NAME", peerName)
 	message.WriteToConn(conn)
 }
 
+//RequestPeers Запрос списка пиров
 func (p Proto) RequestPeers(conn net.Conn) {
-	message := NewMessage("LIST", []byte("TODO"))
+	message := NewEnvelope("LIST", []byte("TODO"))
 	message.WriteToConn(conn)
 }
 
+//SendPeers Отправка списка пиров
 func (p Proto) SendPeers(conn net.Conn) {
-	message := NewMessage("PEER", []byte("TODO"))
+	message := NewEnvelope("PEER", []byte("TODO"))
 	message.WriteToConn(conn)
 }
 
+//SendMessage Отправка сообщения
 func (p Proto) SendMessage(conn net.Conn, msg string) {
-	message := NewMessage("MESS", []byte(msg))
+	message := NewEnvelope("MESS", []byte(msg))
 	message.WriteToConn(conn)
 }
 
+//RegisterPeer Регистрация пира в списках пиров
 func (p Proto) RegisterPeer(peer *Peer) *Peer {
 	// TODO: сравнение через equal
 	if reflect.DeepEqual(peer.PubKey, p.PubKey) {
@@ -94,22 +107,25 @@ func (p Proto) RegisterPeer(peer *Peer) *Peer {
 	return peer
 }
 
+//UnregisterPeer Удаление пира из списка
 func (p Proto) UnregisterPeer(peer *Peer) {
 	p.Peers.Remove(peer)
 	log.Printf("UnRegister peer: %s", peer.Name)
 }
 
+//PeerListener Старт прослушивания соединения с пиром
 func (p Proto) PeerListener(peer *Peer) {
 	readWriter := bufio.NewReadWriter(bufio.NewReader(*peer.Conn), bufio.NewWriter(*peer.Conn))
 	p.HandleProto(readWriter, *peer.Conn)
 }
 
+//HandleProto Обработка входящих сообщений
 func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 	var peer *Peer
 	for {
-		message, err := ReadMessage(rw.Reader)
+		message, err := ReadEnvelope(rw.Reader)
 		if err != nil {
-			log.Printf("Error on read Message: %v", err)
+			log.Printf("Error on read Envelope: %v", err)
 			break
 		}
 
@@ -131,7 +147,7 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 				log.Printf("NEW MESSAGE %s", message.Content)
 			}
 		default:
-			log.Printf("PROTO MESSAGE %v %v %v", message.Cmd, message.MsgId, message.Content)
+			log.Printf("PROTO MESSAGE %v %v %v", message.Cmd, message.Id, message.Content)
 		}
 
 	}

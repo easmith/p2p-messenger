@@ -18,11 +18,11 @@ func TestCrypto() {
 
 	msg := "hello, world"
 
-	log.Printf("Message to sign: %s", msg)
+	log.Printf("Envelope to sign: %s", msg)
 
 	sign := ed25519.Sign(privateKey, []byte(msg))
 
-	log.Printf("Sign of Message: %s", hex.EncodeToString(sign))
+	log.Printf("Sign of Envelope: %s", hex.EncodeToString(sign))
 
 	verify := ed25519.Verify(publicKey, []byte(msg), sign)
 

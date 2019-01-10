@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+//MyWriter Простейшая реализация интерфейса ResponseWriter
 type MyWriter struct {
 	conn net.Conn
 }
@@ -27,6 +28,7 @@ func (w MyWriter) WriteHeader(statusCode int) {
 	}
 }
 
+//Hijack захват сокета. Используется при апгрейде соединения до WebSocket
 func (w MyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	reader := bufio.NewReader(w.conn)
 	writer := bufio.NewWriter(w.conn)
@@ -35,6 +37,6 @@ func (w MyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return w.conn, readWriter, nil
 }
 
-func NewWriter(conn net.Conn) http.ResponseWriter {
+func NewMyWriter(conn net.Conn) http.ResponseWriter {
 	return &MyWriter{conn}
 }

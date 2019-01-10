@@ -11,6 +11,7 @@ import (
 
 func main() {
 
+	// Настройки логирования
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
@@ -19,19 +20,18 @@ func main() {
 
 	flag.Parse()
 
+	// Устновака порта в случае неправильного ввода
 	if *port <= 0 || *port > 65535 {
 		*port = 35035
 	}
 
 	proto := proto.NewProto(*name)
 
-	listenerChan := make(chan string)
+	go discover.StartDiscover(proto)
 
-	go discover.StartDiscover(&proto)
-
-	go listener.StartListener(*port, listenerChan, &proto)
+	go listener.StartListener(*port, proto)
 
 	for {
-		log.Printf("Message from listener channel: %s", <-listenerChan)
+		log.Printf("Envelope from listener channel: %s", <-proto.Broker)
 	}
 }

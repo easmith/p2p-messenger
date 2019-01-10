@@ -14,14 +14,14 @@ func TestNewMessage(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Message
+		want Envelope
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewMessage(tt.args.cmd, tt.args.content); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewMessage() = %v, want %v", got, tt.want)
+			if got := NewEnvelope(tt.args.cmd, tt.args.content); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewEnvelope() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -52,9 +52,9 @@ func TestMessage_Serialize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := NewMessage(tt.fields.cmd, tt.fields.content)
+			m := NewEnvelope(tt.fields.cmd, tt.fields.content)
 			if got := m.Serialize(); !reflect.DeepEqual(got[len(got)-2:], tt.want) {
-				t.Errorf("Message.Serialize() = %v, want %v", got, tt.want)
+				t.Errorf("Envelope.Serialize() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -67,12 +67,12 @@ func TestUnSerialize(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Message
+		want Envelope
 	}{
 		{
 			name: "unserialize",
-			args: args{b: NewMessage("2222", "44").Serialize()},
-			want: NewMessage("2222", "44"),
+			args: args{b: NewEnvelope("2222", "44").Serialize()},
+			want: NewEnvelope("2222", "44"),
 		},
 	}
 	for _, tt := range tests {
