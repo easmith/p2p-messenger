@@ -15,6 +15,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// Переключение на WebSocket и обмен сообщений с фронтом через него
 func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 	c, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
@@ -22,6 +23,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 		return
 	}
 	defer c.Close()
+
 	for {
 		mt, message, err := c.ReadMessage()
 		if err != nil {
@@ -38,31 +40,35 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 			continue
 		}
 
-		if decodedMessage.Cmd == "PEERS" {
+		switch decodedMessage.Cmd {
+		case "PEERS":
+			{
+				peerList := p.Peers.PeerList()
 
-			peerList := p.Peers.PeerList()
+				peerListJson, err := json.Marshal(peerList)
 
-			peerListJson, err := json.Marshal(peerList)
+				if err != nil {
+					panic(err)
+				}
 
-			if err != nil {
-				panic(err)
+				writeToWs(c, mt, peerListJson)
 			}
+		case "MESS":
+			{
+				hexPubKey, err := hex.DecodeString(decodedMessage.To)
+				if err != nil {
+					log.Printf("decode error: %s", err)
+					continue
+				}
+				peer, found := p.Peers.Get(string(hexPubKey))
+				if found {
+					writeToWs(c, mt, message)
+					p.SendMessage(*peer.Conn, decodedMessage.Content)
+				}
 
-			writeToWs(c, mt, peerListJson)
+			}
 		}
-		if decodedMessage.Cmd == "MESS" {
 
-			hexPubKey, err := hex.DecodeString(decodedMessage.To)
-			if err != nil {
-				log.Printf("decode error: %s", err)
-				continue
-			}
-			peer, found := p.Peers.Get(string(hexPubKey))
-			if found {
-				writeToWs(c, mt, message)
-				p.SendMessage(*peer.Conn, decodedMessage.Content)
-			}
-		}
 	}
 }
 

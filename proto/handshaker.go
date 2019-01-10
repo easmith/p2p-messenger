@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func CreatePeer(message *Message, conn net.Conn) *Peer {
+func CreatePeer(message *Envelope, conn net.Conn) *Peer {
 	if string(message.Cmd) != "NAME" {
 		return nil
 	}

@@ -14,7 +14,8 @@ import (
 	"strings"
 )
 
-func StartListener(port int, ch chan string, proto *proto.Proto) {
+//StartListener Старт прослушивания порта и обработки входящих соединений
+func StartListener(port int, proto *proto.Proto) {
 	service := fmt.Sprintf(":%v", port)
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
@@ -33,16 +34,15 @@ func StartListener(port int, ch chan string, proto *proto.Proto) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			ch <- "conn Accept error: " + err.Error()
 			continue
 		}
-		// TODO: общение через канал
 		go onConnection(conn, proto)
 	}
 
 	ch <- "done"
 }
 
+// Обработка входящего соединения
 func onConnection(conn net.Conn, p *proto.Proto) {
 	defer func() {
 		//proto.Peers.(conn)
@@ -90,12 +90,12 @@ func handleHttp(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 	} else {
 
 		if path.Clean(request.URL.Path) == "/ws" {
-			handleWs(NewWriter(conn), request, p)
+			handleWs(NewMyWriter(conn), request, p)
 			return
 		} else {
 			processRequest(request, &response)
 			//fileServer := http.FileServer(http.Dir("./front/build/"))
-			//fileServer.ServeHTTP(NewWriter(conn), request)
+			//fileServer.ServeHTTP(NewMyWriter(conn), request)
 		}
 	}
 

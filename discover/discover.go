@@ -8,6 +8,7 @@ import (
 	"os"
 )
 
+//StartDiscover Начинает подключения к пирам из списка peers.txt и отправляет им свое имя
 func StartDiscover(p *proto.Proto) {
 
 	file, err := os.Open("./peers.txt")
@@ -25,11 +26,12 @@ func StartDiscover(p *proto.Proto) {
 
 	log.Printf("DISCOVER: Start peer discovering. Last seen peers: %v", len(lastPeers))
 	for _, peerAddress := range lastPeers {
-		go checkPeer(p, peerAddress)
+		go connectToPeer(p, peerAddress)
 	}
 }
 
-func checkPeer(p *proto.Proto, peerAddress string) {
+// подключаемся к пиру по адресу
+func connectToPeer(p *proto.Proto, peerAddress string) {
 	conn, err := net.Dial("tcp", peerAddress)
 	if err != nil {
 		log.Printf("Dial ERROR: " + err.Error())
@@ -52,13 +54,14 @@ func checkPeer(p *proto.Proto, peerAddress string) {
 	// TODO: ping-pong
 }
 
+// Отправляем пиру свое имя и ожидаем от него его имя
 func handShake(p *proto.Proto, conn net.Conn) *proto.Peer {
 
 	p.SendName(conn)
 
-	message, err := proto.ReadMessage(bufio.NewReader(conn))
+	message, err := proto.ReadEnvelope(bufio.NewReader(conn))
 	if err != nil {
-		log.Printf("Error on read Message: %s", err)
+		log.Printf("Error on read Envelope: %s", err)
 		return nil
 	}
 

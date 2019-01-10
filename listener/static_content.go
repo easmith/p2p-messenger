@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Обработка входящего HTTP запроса
 func processRequest(request *http.Request, response *http.Response) {
 	path := path.Clean(request.URL.Path)
 
@@ -44,6 +45,7 @@ func processRequest(request *http.Request, response *http.Response) {
 	responseFile(response, filePath)
 }
 
+// Отдает содержимое файла
 func responseFile(response *http.Response, fileName string) {
 	file, err := os.Open(fileName)
 
@@ -60,6 +62,7 @@ func responseFile(response *http.Response, fileName string) {
 	response.Body = file
 }
 
+// Отдает список содержимого каталога
 func readDir(root string) ([]string, error) {
 	var files []string
 	f, err := os.Open(root)

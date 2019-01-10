@@ -11,11 +11,16 @@ import (
 var idLen = 16
 var cmdLen = 4
 
-type Message struct {
+//Envelope Конверт для сообщений между пирами
+type Envelope struct {
 	Cmd     []byte
-	MsgId   []byte
+	Id      []byte
 	Length  uint16
 	Content []byte
+}
+
+func (m Envelope) String() string {
+	return string(m.Cmd) + "-" + string(m.Id) + "-" + string(m.Length)
 }
 
 func getRandomSeed(l int) []byte {
@@ -27,7 +32,8 @@ func getRandomSeed(l int) []byte {
 	return seed
 }
 
-func NewMessage(cmd string, contentBytes []byte) Message {
+//NewEnvelope Создание нового конверта
+func NewEnvelope(cmd string, contentBytes []byte) Envelope {
 	contentLength := len(contentBytes)
 	log.Printf("content[%v]: %s", contentLength, contentBytes)
 	if contentLength >= (2 << 16) {
@@ -35,20 +41,21 @@ func NewMessage(cmd string, contentBytes []byte) Message {
 		contentBytes = contentBytes[:contentLength]
 	}
 
-	return Message{
+	return Envelope{
 		Cmd:     []byte(cmd)[:cmdLen],
-		MsgId:   getRandomSeed(idLen)[:idLen],
+		Id:      getRandomSeed(idLen)[:idLen],
 		Length:  uint16(contentLength),
 		Content: contentBytes[0:contentLength],
 	}
 }
 
-func (m Message) Serialize() []byte {
+//Serialize Сериализация конверта и содержимого в массив байт
+func (m Envelope) Serialize() []byte {
 	result := make([]byte, 0, cmdLen+idLen+len(m.Content))
 
 	// TODO: неудобная конкатенация
 	result = append(result, m.Cmd[0:cmdLen]...)
-	result = append(result, m.MsgId[0:idLen]...)
+	result = append(result, m.Id[0:idLen]...)
 
 	contentLengthBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(contentLengthBytes, m.Length)
@@ -59,19 +66,20 @@ func (m Message) Serialize() []byte {
 	return result
 }
 
-//UnSerialize
-func UnSerialize(b []byte) Message {
+//UnSerialize Десериализация массива байт в конверт с содержимым
+func UnSerialize(b []byte) Envelope {
 	contentLength := binary.BigEndian.Uint16(b[idLen+cmdLen : idLen+cmdLen+2])
 
-	return Message{
+	return Envelope{
 		Cmd:     b[0:cmdLen],
-		MsgId:   b[cmdLen : cmdLen+idLen],
+		Id:      b[cmdLen : cmdLen+idLen],
 		Length:  contentLength,
 		Content: b[idLen+cmdLen+2 : idLen+cmdLen+2+int(contentLength)],
 	}
 }
 
-func ReadMessage(reader *bufio.Reader) (*Message, error) {
+//ReadEnvelope Формирование конверта из байтов ридера сокета
+func ReadEnvelope(reader *bufio.Reader) (*Envelope, error) {
 	msgId := make([]byte, idLen)
 	cmd := make([]byte, cmdLen)
 	contentLength := make([]byte, 2)
@@ -94,15 +102,15 @@ func ReadMessage(reader *bufio.Reader) (*Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Message{
-		MsgId:   msgId,
+	return &Envelope{
+		Id:      msgId,
 		Cmd:     cmd,
 		Length:  length,
 		Content: content,
 	}, nil
 }
 
-func (m Message) WriteToConn(conn net.Conn) {
+func (m Envelope) WriteToConn(conn net.Conn) {
 	log.Printf("Proto write: %s", m.Cmd)
 	_, err := conn.Write(m.Serialize())
 	if err != nil {
