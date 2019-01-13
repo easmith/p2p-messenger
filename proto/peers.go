@@ -11,7 +11,6 @@ import (
 
 type Peer struct {
 	PubKey    ed25519.PublicKey
-	Addr      string
 	Conn      *net.Conn
 	Name      string
 	FirstSeen string

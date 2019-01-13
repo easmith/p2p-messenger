@@ -8,13 +8,20 @@ import (
 	"net"
 )
 
-var idLen = 16
 var cmdLen = 4
+var idLen = 16
+var fromLen = 32
+var toLen = 32
+var signLen = 64
+var headerLen = cmdLen + idLen + fromLen + toLen + signLen + 2
 
 //Envelope Конверт для сообщений между пирами
 type Envelope struct {
 	Cmd     []byte
 	Id      []byte
+	From    []byte
+	To      []byte
+	Sign    []byte
 	Length  uint16
 	Content []byte
 }
@@ -33,29 +40,43 @@ func getRandomSeed(l int) []byte {
 }
 
 //NewEnvelope Создание нового конверта
-func NewEnvelope(cmd string, contentBytes []byte) Envelope {
+func NewEnvelope(cmd string, contentBytes []byte) (envelope *Envelope) {
 	contentLength := len(contentBytes)
 	log.Printf("content[%v]: %s", contentLength, contentBytes)
-	if contentLength >= (2 << 16) {
-		contentLength = (2 << 16) - 1
-		contentBytes = contentBytes[:contentLength]
+	if contentLength >= 65535 {
+		contentBytes = contentBytes[:65535]
 	}
 
-	return Envelope{
+	envelope = &Envelope{
 		Cmd:     []byte(cmd)[:cmdLen],
 		Id:      getRandomSeed(idLen)[:idLen],
+		From:    make([]byte, 32),
+		To:      make([]byte, 32),
+		Sign:    make([]byte, 32),
 		Length:  uint16(contentLength),
 		Content: contentBytes[0:contentLength],
 	}
+	return
+}
+
+func NewSignedEnvelope(cmd string, from []byte, to []byte, sign []byte, contentBytes []byte) (envelope *Envelope) {
+	envelope = NewEnvelope(cmd, contentBytes)
+	envelope.From = from
+	envelope.To = to
+	envelope.Sign = sign
+	return
 }
 
 //Serialize Сериализация конверта и содержимого в массив байт
 func (m Envelope) Serialize() []byte {
-	result := make([]byte, 0, cmdLen+idLen+len(m.Content))
+	result := make([]byte, 0, headerLen+len(m.Content))
 
 	// TODO: неудобная конкатенация
 	result = append(result, m.Cmd[0:cmdLen]...)
 	result = append(result, m.Id[0:idLen]...)
+	result = append(result, m.From[0:fromLen]...)
+	result = append(result, m.To[0:toLen]...)
+	result = append(result, m.Sign[0:signLen]...)
 
 	contentLengthBytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(contentLengthBytes, m.Length)
@@ -67,47 +88,48 @@ func (m Envelope) Serialize() []byte {
 }
 
 //UnSerialize Десериализация массива байт в конверт с содержимым
-func UnSerialize(b []byte) Envelope {
-	contentLength := binary.BigEndian.Uint16(b[idLen+cmdLen : idLen+cmdLen+2])
-
-	return Envelope{
-		Cmd:     b[0:cmdLen],
-		Id:      b[cmdLen : cmdLen+idLen],
-		Length:  contentLength,
-		Content: b[idLen+cmdLen+2 : idLen+cmdLen+2+int(contentLength)],
+func UnSerialize(b []byte) (envelope *Envelope) {
+	contentLength := binary.BigEndian.Uint16(b[headerLen-2 : headerLen])
+	if contentLength > 65535 {
+		return nil
 	}
+
+	envelope = &Envelope{
+		Cmd:    b[0:cmdLen],
+		Id:     b[cmdLen : cmdLen+idLen],
+		From:   b[cmdLen+idLen : cmdLen+idLen+fromLen],
+		To:     b[cmdLen+idLen+fromLen : cmdLen+idLen+fromLen+toLen],
+		Sign:   b[cmdLen+idLen+fromLen+toLen : cmdLen+idLen+fromLen+toLen+signLen],
+		Length: contentLength,
+	}
+
+	if len(b) == (headerLen + int(contentLength)) {
+		envelope.Content = b[headerLen:]
+	} else {
+		envelope.Content = make([]byte, contentLength)
+	}
+
+	return
 }
 
 //ReadEnvelope Формирование конверта из байтов ридера сокета
 func ReadEnvelope(reader *bufio.Reader) (*Envelope, error) {
-	msgId := make([]byte, idLen)
-	cmd := make([]byte, cmdLen)
-	contentLength := make([]byte, 2)
-	_, err := reader.Read(cmd)
-	// TODO: Много лишнего кода при обработке ошибок
+	header := make([]byte, headerLen)
+
+	// read envelope header
+	_, err := reader.Read(header)
 	if err != nil {
 		return nil, err
 	}
-	_, err = reader.Read(msgId)
+
+	envelope := UnSerialize(header)
+
+	_, err = reader.Read(envelope.Content)
 	if err != nil {
 		return nil, err
 	}
-	_, err = reader.Read(contentLength)
-	if err != nil {
-		return nil, err
-	}
-	length := binary.BigEndian.Uint16(contentLength)
-	content := make([]byte, length)
-	_, err = reader.Read(content)
-	if err != nil {
-		return nil, err
-	}
-	return &Envelope{
-		Id:      msgId,
-		Cmd:     cmd,
-		Length:  length,
-		Content: content,
-	}, nil
+
+	return envelope, nil
 }
 
 func (m Envelope) WriteToConn(conn net.Conn) {

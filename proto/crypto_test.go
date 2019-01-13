@@ -1,82 +1,59 @@
 package proto
 
 import (
-	"fmt"
-	"golang.org/x/crypto/curve25519"
-	"golang.org/x/crypto/ed25519"
+	"os"
 	"reflect"
 	"testing"
 )
 
-func TestCreateKeyPair(t *testing.T) {
-	publicKey1, privateKey1 := CreateKeyPair()
+func TestCalcSharedSecret(t *testing.T) {
+	publicKey1, privateKey1 := CreateKeyExchangePair()
 
-	publicKey2, privateKey2 := CreateKeyPair()
+	publicKey2, privateKey2 := CreateKeyExchangePair()
 
-	fmt.Printf("1 pub %v\n", publicKey1)
-	fmt.Printf("1 priv %v\n", privateKey1)
-	fmt.Printf("2 pub %v\n", publicKey2)
-	fmt.Printf("2 priv %v\n", privateKey2)
+	secret1 := CalcSharedSecret(publicKey1, privateKey2)
+	secret2 := CalcSharedSecret(publicKey2, privateKey1)
 
-	var sec1 [32]byte
-	var sec2 [32]byte
-
-	curve25519.ScalarMult(&sec1, &privateKey2, &publicKey1)
-	curve25519.ScalarMult(&sec2, &privateKey1, &publicKey2)
-
-	t.Logf("Sec1 %v", sec1)
-	t.Logf("Sec2 %v", sec2)
-
-	equal := reflect.DeepEqual(sec1, sec2)
-
-	fmt.Printf("Secrets are equals: %v", equal)
+	equal := reflect.DeepEqual(secret1, secret2)
+	t.Logf("Secrets are equals? %v", equal)
 }
 
-func TestCreateKeyPair2(t *testing.T) {
-	publicKey1, privateKey1, _ := ed25519.GenerateKey(nil)
+func TestSaveKey(t *testing.T) {
+	type args struct {
+		fileName string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "Can I create new file?",
+			args: args{fileName: "auto-test.key"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SaveKey(tt.args.fileName)
 
-	publicKey2, privateKey2, _ := ed25519.GenerateKey(nil)
+			if got == nil {
+				t.Fatalf("SaveKey() return nil file")
+			}
 
-	fmt.Printf("1 pub %v\n", publicKey1)
-	fmt.Printf("1 priv %v\n", privateKey1)
-	fmt.Printf("2 pub %v\n", publicKey2)
-	fmt.Printf("2 priv %v\n", privateKey2)
+			fileName := got.Name()
 
-	sec1, _ := GenerateSharedSecret(publicKey1, privateKey2)
-	sec2, _ := GenerateSharedSecret(publicKey2, privateKey1)
+			info, e := os.Stat(fileName)
+			if e != nil {
+				t.Fatalf(e.Error())
+			}
 
-	t.Logf("Sec1 %v", sec1)
-	t.Logf("Sec2 %v", sec2)
-
-	equal := reflect.DeepEqual(sec1, sec2)
-
-	fmt.Printf("Secrets are equals: %v", equal)
-}
-
-func TestSign(t *testing.T) {
-	publicKey, privateKey, _ := ed25519.GenerateKey(nil)
-
-	//privateKey, publicKey, _ := GenerateKey(rand.Reader)
-	var privateKey2 [32]byte
-	copy(privateKey2[:], privateKey)
-	privateKey2[0] &= 248
-	privateKey2[31] &= 127
-	privateKey2[31] |= 64
-
-	var pub, priv [32]byte
-	copy(pub[:], publicKey[:])
-	copy(priv[:], privateKey2[:])
-
-	curve25519.ScalarBaseMult(&pub, &priv)
-
-	message := []byte("Message")
-	copy(privateKey, priv[:])
-	sign := ed25519.Sign(privateKey, message)
-
-	t.Logf("Pub: %v Sign %v", publicKey, sign)
-
-	copy(publicKey, pub[:])
-
-	verify := ed25519.Verify(publicKey, message, sign)
-	t.Logf("Verify: %v", verify)
+			size := info.Size()
+			if size != 32 {
+				t.Errorf("Incorrect file size: %v", size)
+			}
+			e = os.Remove(fileName)
+			if e != nil {
+				t.Fatalf(e.Error())
+			}
+		})
+	}
 }
