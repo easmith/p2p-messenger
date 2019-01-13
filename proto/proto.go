@@ -48,7 +48,7 @@ func getSeed() []byte {
 //NewProto - создание экземпляра ядра протокола
 func NewProto(name string) *Proto {
 	//privateKey := ed25519.NewKeyFromSeed(getSeed())
-	publicKey, privateKey := LoadKey()
+	publicKey, privateKey := LoadKey(name)
 	return &Proto{
 		Name:    name,
 		Peers:   NewPeers(),
@@ -68,26 +68,29 @@ func (p Proto) SendName(conn net.Conn) {
 	if err != nil {
 		panic(err)
 	}
-	message := NewEnvelope("NAME", peerName)
-	message.WriteToConn(conn)
+	sign := ed25519.Sign(p.privKey, peerName)
+	//message := NewEnvelope("NAME", peerName)
+	envelope := NewSignedEnvelope("NAME", p.PubKey[:], make([]byte, 32), sign, peerName)
+
+	envelope.WriteToConn(conn)
 }
 
 //RequestPeers Запрос списка пиров
 func (p Proto) RequestPeers(conn net.Conn) {
-	message := NewEnvelope("LIST", []byte("TODO"))
-	message.WriteToConn(conn)
+	envelope := NewEnvelope("LIST", []byte("TODO"))
+	envelope.WriteToConn(conn)
 }
 
 //SendPeers Отправка списка пиров
 func (p Proto) SendPeers(conn net.Conn) {
-	message := NewEnvelope("PEER", []byte("TODO"))
-	message.WriteToConn(conn)
+	envelope := NewEnvelope("PEER", []byte("TODO"))
+	envelope.WriteToConn(conn)
 }
 
 //SendMessage Отправка сообщения
 func (p Proto) SendMessage(conn net.Conn, msg string) {
-	message := NewEnvelope("MESS", []byte(msg))
-	message.WriteToConn(conn)
+	envelope := NewEnvelope("MESS", []byte(msg))
+	envelope.WriteToConn(conn)
 }
 
 //RegisterPeer Регистрация пира в списках пиров
@@ -124,6 +127,10 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 		if err != nil {
 			log.Printf("Error on read Envelope: %v", err)
 			break
+		}
+
+		if ed25519.Verify(envelope.From, envelope.Content, envelope.Sign) {
+			log.Printf("Signed envelope!")
 		}
 
 		switch string(envelope.Cmd) {

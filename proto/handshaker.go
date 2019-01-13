@@ -30,7 +30,6 @@ func CreatePeer(message *Envelope, conn net.Conn) *Peer {
 
 	peer := &Peer{
 		PubKey:    rawPubKey,
-		Addr:      conn.RemoteAddr().String(),
 		Conn:      &conn,
 		Name:      peerName.Name,
 		FirstSeen: time.Now().String(),
