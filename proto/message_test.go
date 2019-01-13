@@ -9,7 +9,7 @@ func TestNewMessage(t *testing.T) {
 	type args struct {
 		cmd     string
 		to      string
-		content string
+		content []byte
 	}
 	tests := []struct {
 		name string
@@ -31,7 +31,7 @@ func TestMessage_Serialize(t *testing.T) {
 	type fields struct {
 		id      []byte
 		cmd     string
-		content string
+		content []byte
 	}
 	tests := []struct {
 		name   string
@@ -43,7 +43,7 @@ func TestMessage_Serialize(t *testing.T) {
 			fields: fields{
 				id:      []byte("1111111111111111"),
 				cmd:     "COMMAND",
-				content: "44",
+				content: []byte("44"),
 			},
 			want: []byte("44"),
 		},
@@ -71,8 +71,8 @@ func TestUnSerialize(t *testing.T) {
 	}{
 		{
 			name: "unserialize",
-			args: args{b: NewEnvelope("2222", "44").Serialize()},
-			want: NewEnvelope("2222", "44"),
+			args: args{b: NewEnvelope("2222", []byte("44")).Serialize()},
+			want: NewEnvelope("2222", []byte("44")),
 		},
 	}
 	for _, tt := range tests {
