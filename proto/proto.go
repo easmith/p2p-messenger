@@ -48,10 +48,7 @@ func getSeed() []byte {
 //NewProto - создание экземпляра ядра протокола
 func NewProto(name string) *Proto {
 	//privateKey := ed25519.NewKeyFromSeed(getSeed())
-	publicKey, privateKey, err := ed25519.GenerateKey(nil)
-	if err != nil {
-		panic(err)
-	}
+	publicKey, privateKey := LoadKey()
 	return &Proto{
 		Name:    name,
 		Peers:   NewPeers(),
