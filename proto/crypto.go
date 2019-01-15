@@ -1,10 +1,14 @@
 package proto
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"encoding/hex"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
+	"io"
 	"log"
 	"os"
 )
@@ -86,4 +90,60 @@ func CalcSharedSecret(publicKey []byte, privateKey []byte) (secret [32]byte) {
 	return
 }
 
-//func
+//Encrypt
+func Encrypt(content []byte, key []byte) []byte {
+	tip := len(content) % aes.BlockSize
+	if tip != 0 {
+		repeat := bytes.Repeat([]byte("\x00"), aes.BlockSize-(tip))
+		content = append(content, repeat...)
+	}
+
+	log.Printf("length whant to bee 0 = %v", len(content)%aes.BlockSize)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the encrypted.
+	encrypted := make([]byte, aes.BlockSize+len(content))
+	iv := encrypted[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		panic(err)
+	}
+
+	mode := cipher.NewCBCEncrypter(block, iv)
+	mode.CryptBlocks(encrypted[aes.BlockSize:], content)
+
+	return encrypted
+}
+
+func Decrypt(encrypted []byte, key []byte) []byte {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	if len(encrypted) < aes.BlockSize {
+		panic("ciphertext too short")
+	}
+	iv := encrypted[:aes.BlockSize]
+	encrypted = encrypted[aes.BlockSize:]
+
+	// CBC mode always works in whole blocks.
+	if len(encrypted)%aes.BlockSize != 0 {
+		panic("ciphertext is not a multiple of the block size")
+	}
+
+	mode := cipher.NewCBCDecrypter(block, iv)
+
+	// CryptBlocks can work in-place if the two arguments are the same.
+	mode.CryptBlocks(encrypted, encrypted)
+
+	encrypted = bytes.Trim(encrypted, string([]byte("\x00")))
+
+	return encrypted
+}
