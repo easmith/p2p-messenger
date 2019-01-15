@@ -2,6 +2,7 @@ package proto
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
 	"log"
@@ -66,11 +67,23 @@ func CreateKeyExchangePair() (publicKey [32]byte, privateKey [32]byte) {
 
 	curve25519.ScalarBaseMult(&publicKey, &privateKey)
 
+	log.Printf("Key exchange pair %s %s", hex.EncodeToString(publicKey[:]), hex.EncodeToString(privateKey[:]))
+
 	return
 }
 
 // Calculate shared secret
-func CalcSharedSecret(publicKey [32]byte, privateKey [32]byte) (secret [32]byte) {
-	curve25519.ScalarMult(&secret, &privateKey, &publicKey)
+func CalcSharedSecret(publicKey []byte, privateKey []byte) (secret [32]byte) {
+	var pubKey [32]byte
+	var privKey [32]byte
+	copy(pubKey[:], publicKey[:])
+	copy(privKey[:], privateKey[:])
+
+	curve25519.ScalarMult(&secret, &privKey, &pubKey)
+	log.Printf("publicKey %s", hex.EncodeToString(pubKey[:]))
+	log.Printf("privateKey %s", hex.EncodeToString(privKey[:]))
+	log.Printf("SharedKey %s", hex.EncodeToString(secret[:]))
 	return
 }
+
+//func

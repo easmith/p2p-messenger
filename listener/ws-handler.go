@@ -65,7 +65,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 				peer, found := p.Peers.Get(string(hexPubKey))
 				if found {
 					writeToWs(c, mt, message)
-					p.SendMessage(*peer.Conn, decodedMessage.Content)
+					p.SendMessage(peer, decodedMessage.Content)
 				}
 
 			}

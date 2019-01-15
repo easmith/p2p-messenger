@@ -11,8 +11,8 @@ func TestCalcSharedSecret(t *testing.T) {
 
 	publicKey2, privateKey2 := CreateKeyExchangePair()
 
-	secret1 := CalcSharedSecret(publicKey1, privateKey2)
-	secret2 := CalcSharedSecret(publicKey2, privateKey1)
+	secret1 := CalcSharedSecret(publicKey1[:], privateKey2[:])
+	secret2 := CalcSharedSecret(publicKey2[:], privateKey1[:])
 
 	equal := reflect.DeepEqual(secret1, secret2)
 	t.Logf("Secrets are equals? %v", equal)

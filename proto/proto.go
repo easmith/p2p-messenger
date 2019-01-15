@@ -59,38 +59,44 @@ func NewProto(name string) *Proto {
 }
 
 //SendName Отправка своего имени в сокет
-func (p Proto) SendName(conn net.Conn) {
-	peerName, err := json.Marshal(PeerName{
+func (p Proto) SendName(peer *Peer) {
+
+	exchPubKey, exchPrivKey := CreateKeyExchangePair()
+
+	handShake, err := json.Marshal(HandShake{
 		Name:   p.Name,
 		PubKey: hex.EncodeToString(p.PubKey),
+		ExKey:  hex.EncodeToString(exchPubKey[:]),
 	})
+
+	peer.SharedKey.Update(nil, exchPrivKey[:])
 
 	if err != nil {
 		panic(err)
 	}
-	sign := ed25519.Sign(p.privKey, peerName)
-	//message := NewEnvelope("NAME", peerName)
-	envelope := NewSignedEnvelope("NAME", p.PubKey[:], make([]byte, 32), sign, peerName)
+	sign := ed25519.Sign(p.privKey, handShake)
 
-	envelope.WriteToConn(conn)
+	envelope := NewSignedEnvelope("HAND", p.PubKey[:], make([]byte, 32), sign, handShake)
+
+	envelope.Send(peer)
 }
 
 //RequestPeers Запрос списка пиров
-func (p Proto) RequestPeers(conn net.Conn) {
+func (p Proto) RequestPeers(peer *Peer) {
 	envelope := NewEnvelope("LIST", []byte("TODO"))
-	envelope.WriteToConn(conn)
+	envelope.Send(peer)
 }
 
 //SendPeers Отправка списка пиров
-func (p Proto) SendPeers(conn net.Conn) {
+func (p Proto) SendPeers(peer *Peer) {
 	envelope := NewEnvelope("PEER", []byte("TODO"))
-	envelope.WriteToConn(conn)
+	envelope.Send(peer)
 }
 
 //SendMessage Отправка сообщения
-func (p Proto) SendMessage(conn net.Conn, msg string) {
+func (p Proto) SendMessage(peer *Peer, msg string) {
 	envelope := NewEnvelope("MESS", []byte(msg))
-	envelope.WriteToConn(conn)
+	envelope.Send(peer)
 }
 
 //RegisterPeer Регистрация пира в списках пиров
@@ -102,7 +108,7 @@ func (p Proto) RegisterPeer(peer *Peer) *Peer {
 
 	p.Peers.Put(peer)
 
-	log.Printf("Register new peer: %s", peer.Name)
+	log.Printf("Register new peer: %s (%v)", peer.Name, len(p.Peers.peers))
 
 	return peer
 }
@@ -113,8 +119,8 @@ func (p Proto) UnregisterPeer(peer *Peer) {
 	log.Printf("UnRegister peer: %s", peer.Name)
 }
 
-//PeerListener Старт прослушивания соединения с пиром
-func (p Proto) PeerListener(peer *Peer) {
+//ListenPeer Старт прослушивания соединения с пиром
+func (p Proto) ListenPeer(peer *Peer) {
 	readWriter := bufio.NewReadWriter(bufio.NewReader(*peer.Conn), bufio.NewWriter(*peer.Conn))
 	p.HandleProto(readWriter, *peer.Conn)
 }
@@ -133,18 +139,25 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 			log.Printf("Signed envelope!")
 		}
 
+		log.Printf("LISTENER: recieve envelope from %s", conn.RemoteAddr())
+
 		switch string(envelope.Cmd) {
-		case "NAME":
+		case "HAND":
 			{
-				newPeer := CreatePeer(envelope, conn)
-				if newPeer != nil {
+				newPeer := NewPeer(conn)
+
+				err := newPeer.UpdatePeer(envelope)
+				if err != nil {
+					log.Printf("Update peer error: %s", err)
+				} else {
 					if peer != nil {
 						p.UnregisterPeer(peer)
 					}
 					p.RegisterPeer(newPeer)
 					peer = newPeer
 				}
-				p.SendName(conn)
+				p.SendName(peer)
+
 			}
 		case "MESS":
 			{
