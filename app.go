@@ -7,6 +7,9 @@ import (
 	"github.com/easmith/p2p-messenger/proto"
 	"log"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 )
 
 func main() {
@@ -15,25 +18,31 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
-	name := flag.String("name", "ONE", "name")
+	name := flag.String("name", "You", "name")
 	port := flag.Int("port", 35035, "port as port")
+	peersFile := flag.String("peers", "peers.txt", "peers file")
 
 	flag.Parse()
 
-	// Устновака порта в случае неправильного ввода
-	if *port <= 0 || *port > 65535 {
-		*port = 35035
-	}
+	signalChannel := make(chan os.Signal, 2)
+	signal.Notify(signalChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-signalChannel
+		log.Printf("Exit by signal: %s", sig)
+		os.Exit(1)
+	}()
 
-	waitClose := make(chan int)
+	p := proto.NewProto(*name)
 
-	proto := proto.NewProto(*name)
+	var wg sync.WaitGroup
 
-	go discover.StartDiscover(proto)
+	wg.Add(2)
+	go discover.StartDiscover(p, *peersFile)
+	go listener.StartListener(p, *port)
+	wg.Wait()
 
-	go listener.StartListener(*port, proto)
-
-	for {
-		log.Printf("Close: %v", <-waitClose)
-	}
+	//e := webview.Open("Peer To Peer Messenger", fmt.Sprintf("http://localhost:%v", *port), 800, 600, false)
+	//if e != nil {
+	//	log.Printf(e.Error())
+	//}
 }

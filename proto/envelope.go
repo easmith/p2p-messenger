@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"log"
-	"net"
 )
 
 var cmdLen = 4
@@ -42,7 +41,6 @@ func getRandomSeed(l int) []byte {
 //NewEnvelope Создание нового конверта
 func NewEnvelope(cmd string, contentBytes []byte) (envelope *Envelope) {
 	contentLength := len(contentBytes)
-	log.Printf("content[%v]: %s", contentLength, contentBytes)
 	if contentLength >= 65535 {
 		contentBytes = contentBytes[:65535]
 	}
@@ -132,9 +130,9 @@ func ReadEnvelope(reader *bufio.Reader) (*Envelope, error) {
 	return envelope, nil
 }
 
-func (m Envelope) WriteToConn(conn net.Conn) {
-	log.Printf("Proto write: %s", m.Cmd)
-	_, err := conn.Write(m.Serialize())
+func (m Envelope) Send(peer *Peer) {
+	log.Printf("Send to peer: %s %s", peer.Name, m.Cmd)
+	_, err := (*peer.Conn).Write(m.Serialize())
 	if err != nil {
 		log.Printf("ERROR on write message: %v", err)
 	}

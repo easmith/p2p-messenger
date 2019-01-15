@@ -3,11 +3,34 @@ package proto
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"golang.org/x/crypto/ed25519"
 	"log"
 	"net"
 	"sync"
+	"time"
 )
+
+type SharedKey struct {
+	RemoteKey []byte
+	LocalKey  []byte
+	Secret    []byte
+}
+
+func (sk *SharedKey) Update(remoteKey []byte, localKey []byte) {
+	if remoteKey != nil {
+		sk.RemoteKey = remoteKey
+	}
+
+	if localKey != nil {
+		sk.LocalKey = localKey
+	}
+
+	if sk.RemoteKey != nil && sk.LocalKey != nil {
+		secret := CalcSharedSecret(sk.RemoteKey, sk.LocalKey)
+		sk.Secret = secret[:32]
+	}
+}
 
 type Peer struct {
 	PubKey    ed25519.PublicKey
@@ -16,19 +39,57 @@ type Peer struct {
 	FirstSeen string
 	LastSeen  string
 	Peers     *Peers
+	SharedKey SharedKey
 }
 
 func (p Peer) String() string {
-	peerName, err := json.Marshal(PeerName{
-		Name:   p.Name,
-		PubKey: hex.EncodeToString(p.PubKey),
-	})
+	return string(p.Name) + ":" + hex.EncodeToString(p.PubKey)
+}
 
-	if err != nil {
-		panic(err)
+func NewPeer(conn net.Conn) *Peer {
+	return &Peer{
+		PubKey:    nil,
+		Conn:      &conn,
+		Name:      conn.RemoteAddr().String(),
+		FirstSeen: time.Now().String(),
+		LastSeen:  time.Now().String(),
+		Peers:     NewPeers(),
+		SharedKey: SharedKey{
+			RemoteKey: nil,
+			LocalKey:  nil,
+			Secret:    nil,
+		},
+	}
+}
+
+func (p *Peer) UpdatePeer(envelope *Envelope) error {
+	if string(envelope.Cmd) != "HAND" {
+		return errors.New("invalid command")
 	}
 
-	return string(peerName)
+	handShake := &HandShake{}
+	err := json.Unmarshal(envelope.Content, handShake)
+	if err != nil {
+		return err
+	}
+
+	rawPubKey, err := hex.DecodeString(handShake.PubKey)
+	if err != nil {
+		return err
+	}
+
+	rawExKey, err := hex.DecodeString(handShake.ExKey)
+	if err != nil {
+		return err
+	}
+
+	// TODO: проверить подпись
+
+	p.Name = handShake.Name
+	p.PubKey = rawPubKey
+
+	p.SharedKey.Update(rawExKey, nil)
+	return nil
 }
 
 type Peers struct {

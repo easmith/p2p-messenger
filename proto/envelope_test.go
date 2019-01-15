@@ -67,7 +67,7 @@ func TestUnSerialize(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Envelope
+		want *Envelope
 	}{
 		{
 			name: "unserialize",

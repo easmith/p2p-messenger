@@ -93,7 +93,7 @@ export default class Main extends Component {
     render() {
         let interlocutorName = this.state.interlocutor ? " with " + this.state.interlocutor.name : "";
         return (
-            <Container className={"vh-100"} fluid style={{marginTop:"-80px", paddingTop:"90px"}}>
+            <Container className={"vh-100 mt-4"} fluid>
                 <Row>
                     <Col className={"border-right"}>
                         <h3>Peers <Button color="info" size={"sm"} onClick={this.updatePeers}>update</Button></h3>

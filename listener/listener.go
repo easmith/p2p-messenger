@@ -15,8 +15,13 @@ import (
 )
 
 //StartListener Старт прослушивания порта и обработки входящих соединений
-func StartListener(port int, proto *proto.Proto) {
-	service := fmt.Sprintf(":%v", port)
+func StartListener(proto *proto.Proto, port int) {
+	// Устновака порта в случае неправильного ввода
+	if port <= 0 || port > 65535 {
+		port = 35035
+	}
+
+	service := fmt.Sprintf("localhost:%v", port)
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
 	if err != nil {
@@ -30,7 +35,7 @@ func StartListener(port int, proto *proto.Proto) {
 		os.Exit(1)
 	}
 
-	log.Println("Start listen " + service)
+	fmt.Printf("\n\tService start on %s\n\n", tcpAddr.String())
 	for {
 		conn, err := listener.Accept()
 		if err != nil {

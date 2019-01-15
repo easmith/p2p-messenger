@@ -9,9 +9,9 @@ import (
 )
 
 //StartDiscover Начинает подключения к пирам из списка peers.txt и отправляет им свое имя
-func StartDiscover(p *proto.Proto) {
+func StartDiscover(p *proto.Proto, peersFile string) {
 
-	file, err := os.Open("./peers.txt")
+	file, err := os.Open(peersFile)
 	if err != nil {
 		log.Printf("DISCOVER: Open peers.txt error: %s", err)
 		return
@@ -47,7 +47,9 @@ func connectToPeer(p *proto.Proto, peerAddress string) {
 		return
 	}
 
-	p.PeerListener(peer)
+	p.RegisterPeer(peer)
+
+	p.ListenPeer(peer)
 
 	p.UnregisterPeer(peer)
 
@@ -56,21 +58,21 @@ func connectToPeer(p *proto.Proto, peerAddress string) {
 
 // Отправляем пиру свое имя и ожидаем от него его имя
 func handShake(p *proto.Proto, conn net.Conn) *proto.Peer {
+	log.Printf("DISCOVERY: try handshake with %s", conn.RemoteAddr())
+	peer := proto.NewPeer(conn)
 
-	p.SendName(conn)
+	p.SendName(peer)
 
-	message, err := proto.ReadEnvelope(bufio.NewReader(conn))
+	envelope, err := proto.ReadEnvelope(bufio.NewReader(conn))
 	if err != nil {
 		log.Printf("Error on read Envelope: %s", err)
 		return nil
 	}
 
-	peer := proto.CreatePeer(message, conn)
-	if peer != nil {
-		p.RegisterPeer(peer)
+	err = peer.UpdatePeer(envelope)
+	if err != nil {
+		log.Printf("HandShake error: %s", err)
 	}
-
-	// TODO: request peers
 
 	return peer
 }
