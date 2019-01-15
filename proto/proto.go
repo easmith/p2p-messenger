@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"golang.org/x/crypto/ed25519"
 	"log"
-	"net"
 	"os"
 	"reflect"
 )
@@ -95,7 +94,14 @@ func (p Proto) SendPeers(peer *Peer) {
 
 //SendMessage Отправка сообщения
 func (p Proto) SendMessage(peer *Peer, msg string) {
-	envelope := NewEnvelope("MESS", []byte(msg))
+	if peer.SharedKey.Secret == nil {
+		log.Fatalf("can't send message!")
+	}
+
+	encryptedMessage := Encrypt([]byte(msg), peer.SharedKey.Secret)
+
+	envelope := NewSignedEnvelope("MESS", p.PubKey, peer.PubKey, ed25519.Sign(p.privKey, encryptedMessage), encryptedMessage)
+
 	envelope.Send(peer)
 }
 
@@ -122,12 +128,11 @@ func (p Proto) UnregisterPeer(peer *Peer) {
 //ListenPeer Старт прослушивания соединения с пиром
 func (p Proto) ListenPeer(peer *Peer) {
 	readWriter := bufio.NewReadWriter(bufio.NewReader(*peer.Conn), bufio.NewWriter(*peer.Conn))
-	p.HandleProto(readWriter, *peer.Conn)
+	p.HandleProto(readWriter, peer)
 }
 
 //HandleProto Обработка входящих сообщений
-func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
-	var peer *Peer
+func (p Proto) HandleProto(rw *bufio.ReadWriter, peer *Peer) {
 	for {
 		envelope, err := ReadEnvelope(rw.Reader)
 		if err != nil {
@@ -139,12 +144,12 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 			log.Printf("Signed envelope!")
 		}
 
-		log.Printf("LISTENER: recieve envelope from %s", conn.RemoteAddr())
+		log.Printf("LISTENER: recieve envelope from %s", (*peer.Conn).RemoteAddr())
 
 		switch string(envelope.Cmd) {
 		case "HAND":
 			{
-				newPeer := NewPeer(conn)
+				newPeer := NewPeer(*peer.Conn)
 
 				err := newPeer.UpdatePeer(envelope)
 				if err != nil {
@@ -161,8 +166,8 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, conn net.Conn) {
 			}
 		case "MESS":
 			{
+				envelope.Content = Decrypt(envelope.Content, peer.SharedKey.Secret)
 				p.Broker <- envelope
-				log.Printf("NEW MESSAGE %s", envelope.Content)
 			}
 		default:
 			log.Printf("PROTO MESSAGE %v %v %v", envelope.Cmd, envelope.Id, envelope.Content)
