@@ -13,8 +13,8 @@ export default class Messages extends Component {
                 {this.props.messages.map((m) => {
                     return (
                         <Row className={"danger"}>
-                            <Col xs={1} className={"text-right border-bottom text-danger"}>from</Col>
-                            <Col> {m}</Col>
+                            <Col xs={1} className={"text-right border-bottom text-danger"}>{m.from}</Col>
+                            <Col> {m.content}</Col>
                         </Row>
                     )
                 })}

@@ -48,9 +48,9 @@ func NewEnvelope(cmd string, contentBytes []byte) (envelope *Envelope) {
 	envelope = &Envelope{
 		Cmd:     []byte(cmd)[:cmdLen],
 		Id:      getRandomSeed(idLen)[:idLen],
-		From:    make([]byte, 32),
-		To:      make([]byte, 32),
-		Sign:    make([]byte, 32),
+		From:    make([]byte, fromLen),
+		To:      make([]byte, toLen),
+		Sign:    make([]byte, signLen),
 		Length:  uint16(contentLength),
 		Content: contentBytes[0:contentLength],
 	}

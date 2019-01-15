@@ -69,7 +69,8 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 	if types.ItIsHttp(buf) {
 		handleHttp(readWriter, conn, p)
 	} else {
-		p.HandleProto(readWriter, conn)
+		peer := proto.NewPeer(conn)
+		p.HandleProto(readWriter, peer)
 	}
 }
 

@@ -61,7 +61,7 @@ export default class Main extends Component {
         if (parsedMessage.cmd === "MESS") {
             this.setState(
                 {
-                    messages: [...this.state.messages, parsedMessage.content]
+                    messages: [...this.state.messages, parsedMessage]
                 }
             )
             //{message: parsedMessage.content})

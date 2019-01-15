@@ -84,6 +84,7 @@ func waitMessageForWs(p *proto.Proto, c *websocket.Conn) {
 				WsCmd: proto.WsCmd{
 					Cmd: "MESS",
 				},
+				From:    hex.EncodeToString(envelope.From),
 				To:      "ME",
 				Content: string(envelope.Content),
 			}
