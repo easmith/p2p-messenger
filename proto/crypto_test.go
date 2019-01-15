@@ -1,6 +1,8 @@
 package proto
 
 import (
+	"encoding/hex"
+	"log"
 	"os"
 	"reflect"
 	"testing"
@@ -56,4 +58,36 @@ func TestSaveKey(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEncrypt(t *testing.T) {
+
+	key := []byte("1234567890123456")
+	message := []byte("secret message from secret place")
+
+	encrypted := Encrypt(message, key)
+	log.Printf(hex.EncodeToString(encrypted))
+
+	decrypted := Decrypt(encrypted, key)
+	log.Printf(hex.EncodeToString(decrypted))
+	log.Printf(string(decrypted))
+
+	//type args struct {
+	//	content []byte
+	//	key     []byte
+	//}
+	//tests := []struct {
+	//	name string
+	//	args args
+	//	want []byte
+	//}{
+	//	// TODO: Add test cases.
+	//}
+	//for _, tt := range tests {
+	//	t.Run(tt.name, func(t *testing.T) {
+	//		if got := Encrypt(tt.args.content, tt.args.key); !reflect.DeepEqual(got, tt.want) {
+	//			t.Errorf("Encrypt() = %v, want %v", got, tt.want)
+	//		}
+	//	})
+	//}
 }
