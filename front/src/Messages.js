@@ -4,6 +4,8 @@ import Row from "reactstrap/es/Row";
 import Col from "reactstrap/es/Col";
 import Container from "reactstrap/es/Container";
 
+import PropTypes from 'prop-types';
+
 export default class Messages extends Component {
 
     render() {
@@ -33,5 +35,5 @@ export default class Messages extends Component {
 
 
 Messages.propTypes = {
-    messages: React.PropTypes.object
+    messages: PropTypes.object
 };

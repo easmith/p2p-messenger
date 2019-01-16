@@ -24,7 +24,9 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 	}
 	defer c.Close()
 
-	go waitMessageForWs(p, c)
+	br := make(chan bool)
+
+	go waitMessageForWs(p, c, br)
 
 	for {
 		mt, message, err := c.ReadMessage()
@@ -82,32 +84,42 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 
 			}
 		}
-
 	}
+
+	br <- true
 }
 
-func waitMessageForWs(p *proto.Proto, c *websocket.Conn) {
+func waitMessageForWs(p *proto.Proto, c *websocket.Conn, br chan bool) {
 	for {
-		envelope := <-p.Broker
-		log.Printf("New message: %s", envelope.Cmd)
-		if string(envelope.Cmd) == "MESS" {
+		select {
+		case envelope := <-p.Broker:
+			{
+				log.Printf("New message: %s", envelope.Cmd)
+				if string(envelope.Cmd) == "MESS" {
 
-			wsCmd := proto.WsMessage{
-				WsCmd: proto.WsCmd{
-					Cmd: "MESS",
-				},
-				From:    hex.EncodeToString(envelope.From),
-				To:      hex.EncodeToString(envelope.To),
-				Content: string(envelope.Content),
+					wsCmd := proto.WsMessage{
+						WsCmd: proto.WsCmd{
+							Cmd: "MESS",
+						},
+						From:    hex.EncodeToString(envelope.From),
+						To:      hex.EncodeToString(envelope.To),
+						Content: string(envelope.Content),
+					}
+
+					wsCmdBytes, err := json.Marshal(wsCmd)
+
+					if err != nil {
+						panic(err)
+					}
+
+					writeToWs(c, 1, wsCmdBytes)
+				}
 			}
-
-			wsCmdBytes, err := json.Marshal(wsCmd)
-
-			if err != nil {
-				panic(err)
+		case _ = <-br:
+			{
+				log.Printf("ws is broken")
+				return
 			}
-
-			writeToWs(c, 1, wsCmdBytes)
 		}
 	}
 }
