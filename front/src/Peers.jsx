@@ -20,20 +20,22 @@ export default class Peers extends Component {
     render() {
         return (
             <ListGroup className={"peers"}>
-                {this.props.peers.map(p => {
-                    return (
-                        <ListGroupItem color={"secondary"} key={p.id}>
-                            <Button color={"default"} onClick={this.selectItem} data-name={p.name} data-id={p.id}>{p.name}</Button>
-                            <Badge className={"float-right"}></Badge>
-                        </ListGroupItem>
-                    )
-                })}
+                {
+                    Object.keys(this.props.peers).map((id) => {
+                        return (
+                            <ListGroupItem color={"secondary"} key={id}>
+                                <Button color={"default"} onClick={this.selectItem} data-name={this.props.peers[id].name} data-id={id}>{this.props.peers[id].name}</Button>
+                                <Badge className={"float-right"}>{this.props.peers[id].counter > 0 ?this.props.peers[id].counter:""}</Badge>
+                            </ListGroupItem>
+                        )
+                    })
+                }
             </ListGroup>
         )
     }
 }
 
 Peers.propTypes = {
-    peers: PropTypes.array,
+    peers: PropTypes.object,
     onSelectPeer: PropTypes.func
 };

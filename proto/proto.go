@@ -3,7 +3,6 @@ package proto
 import (
 	"bufio"
 	"encoding/hex"
-	"encoding/json"
 	"golang.org/x/crypto/ed25519"
 	"log"
 	"os"
@@ -17,6 +16,13 @@ type Proto struct {
 	PubKey  ed25519.PublicKey
 	privKey ed25519.PrivateKey
 	Broker  chan *Envelope
+}
+
+func (p Proto) MyName() *PeerName {
+	return &PeerName{
+		Name:   p.Name,
+		PubKey: hex.EncodeToString(p.PubKey),
+	}
 }
 
 func (p Proto) String() string {
@@ -62,17 +68,14 @@ func (p Proto) SendName(peer *Peer) {
 
 	exchPubKey, exchPrivKey := CreateKeyExchangePair()
 
-	handShake, err := json.Marshal(HandShake{
+	handShake := HandShake{
 		Name:   p.Name,
 		PubKey: hex.EncodeToString(p.PubKey),
 		ExKey:  hex.EncodeToString(exchPubKey[:]),
-	})
+	}.ToJson()
 
 	peer.SharedKey.Update(nil, exchPrivKey[:])
 
-	if err != nil {
-		panic(err)
-	}
 	sign := ed25519.Sign(p.privKey, handShake)
 
 	envelope := NewSignedEnvelope("HAND", p.PubKey[:], make([]byte, 32), sign, handShake)

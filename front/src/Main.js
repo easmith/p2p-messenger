@@ -5,6 +5,9 @@ import Peers from "./Peers";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
 
+
+import update from 'immutability-helper';
+
 export default class Main extends Component {
 
 
@@ -13,9 +16,10 @@ export default class Main extends Component {
 
         this.state = {
             socket: null,
+            iam: null,
             interlocutor: null,
-            peers: [],
-            messages: [],
+            peers: {},
+            messages: {},
         }
     }
 
@@ -25,6 +29,7 @@ export default class Main extends Component {
         this.setState({socket: socket}, () => {
             socket.onopen = function() {
                 console.log("Соединение установлено.");
+                socket.send(JSON.stringify({cmd:"HELLO"}));
                 socket.send(JSON.stringify({cmd:"PEERS"}));
             };
 
@@ -54,19 +59,68 @@ export default class Main extends Component {
             return;
         }
 
-        if (parsedMessage.cmd === "PEERS") {
-            this.setState({peers: parsedMessage.peers})
-        }
+        switch (parsedMessage.cmd) {
+            case "NAME" : {
+                this.setState({iam: {name: parsedMessage.name, id: parsedMessage.id}})
+                break;
+            }
+            case "PEERS" : {
+                let peers = {};
+                parsedMessage.peers.forEach((p) => {
+                    let v = this.state.peers[p.id];
+                    p.counter = v ? v.counter : 0;
+                    peers[p.id] = p
+                });
+                this.setState({peers: peers});
+                return;
+            }
+            case "MESS" : {
+                let peerId = "";
+                let fromName = "";
+                let counter = 1;
 
-        if (parsedMessage.cmd === "MESS") {
-            this.setState(
-                {
-                    messages: [...this.state.messages, parsedMessage]
+                if (parsedMessage.from === this.state.iam.id) {
+                    // это наше сообщение
+                    peerId = parsedMessage.to;
+                    fromName = this.state.iam.name;
+                } else {
+                    // это сообщение от другого пира
+                    peerId = parsedMessage.from;
+                    let peer = this.state.peers[peerId];
+                    if (peer) {
+                        fromName = peer.name;
+                        counter = peer.counter + 1;
+                    } else {
+                        fromName = parsedMessage.from.substr(0, 10);
+                    }
                 }
-            )
-            //{message: parsedMessage.content})
-        }
 
+                let oldMessages = this.state.messages[peerId];
+                if (!oldMessages) {
+                    oldMessages = []
+                }
+
+                let message = {
+                    date: new Date().toLocaleTimeString(['ru-RU', 'en-US'], {hour12: false}),
+                    isMine: parsedMessage.from === this.state.iam.id,
+                    from: fromName,
+                    content: parsedMessage.content
+                };
+
+                oldMessages.push(message);
+
+                console.log(oldMessages)
+
+                this.setState({
+                    peers: update(this.state.peers, {[peerId]: {counter: {$set: counter }}}),
+                    messages: update(this.state.messages, {[peerId]: {$set: oldMessages}})
+                });
+                break;
+            }
+            default : {
+                console.warn("Unknown cmd: " + parsedMessage.cmd)
+            }
+        }
 
     };
 
@@ -77,6 +131,7 @@ export default class Main extends Component {
     sendMessage = (msg) => {
         let cmd = JSON.stringify({
             cmd: "MESS",
+            from: this.state.iam.id,
             to: this.state.interlocutor.id,
             content: msg
         });
@@ -107,7 +162,7 @@ export default class Main extends Component {
                         <Peers peers={this.state.peers} onSelectPeer={this.selectPeer}/>
                     </Col>
                     <Col xs={9}>
-                        <Messages messages={this.state.messages}/>
+                        <Messages messages={this.state.interlocutor?this.state.messages[this.state.interlocutor.id]:[]}/>
                         <MessageInput interlocutor={this.state.interlocutor} onSendMessage={this.sendMessage}/>
                     </Col>
                 </Row>

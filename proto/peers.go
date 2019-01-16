@@ -126,9 +126,9 @@ func (p Peers) Remove(peer *Peer) (found bool) {
 	return
 }
 
-func (p Peers) PeerList() *PeerList {
+func (p Peers) PeerList() *WsPeerList {
 
-	peerList := &PeerList{
+	peerList := &WsPeerList{
 		WsCmd: WsCmd{
 			Cmd: "PEERS",
 		},
