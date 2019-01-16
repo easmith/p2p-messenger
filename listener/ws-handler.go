@@ -43,6 +43,18 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 		}
 
 		switch decodedMessage.Cmd {
+		case "HELLO":
+			{
+				myName := p.MyName()
+				name := proto.WsMyName{
+					WsCmd: proto.WsCmd{
+						Cmd: "NAME",
+					},
+					Name:   myName.Name,
+					PubKey: myName.PubKey,
+				}
+				writeToWs(c, mt, name.ToJson())
+			}
 		case "PEERS":
 			{
 				peerList := p.Peers.PeerList()
@@ -85,7 +97,7 @@ func waitMessageForWs(p *proto.Proto, c *websocket.Conn) {
 					Cmd: "MESS",
 				},
 				From:    hex.EncodeToString(envelope.From),
-				To:      "ME",
+				To:      hex.EncodeToString(envelope.To),
 				Content: string(envelope.Content),
 			}
 
