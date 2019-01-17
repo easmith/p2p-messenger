@@ -21,7 +21,7 @@ func StartListener(proto *proto.Proto, port int) {
 		port = 35035
 	}
 
-	service := fmt.Sprintf("localhost:%v", port)
+	service := fmt.Sprintf("0.0.0.0:%v", port)
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
 	if err != nil {
