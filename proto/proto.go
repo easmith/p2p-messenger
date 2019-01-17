@@ -11,6 +11,7 @@ import (
 
 //Proto Ядро протокола
 type Proto struct {
+	Port    int
 	Name    string
 	Peers   *Peers
 	PubKey  ed25519.PublicKey
@@ -51,10 +52,11 @@ func getSeed() []byte {
 }
 
 //NewProto - создание экземпляра ядра протокола
-func NewProto(name string) *Proto {
+func NewProto(name string, port int) *Proto {
 	//privateKey := ed25519.NewKeyFromSeed(getSeed())
 	publicKey, privateKey := LoadKey(name)
 	return &Proto{
+		Port:    port,
 		Name:    name,
 		Peers:   NewPeers(),
 		PubKey:  publicKey,

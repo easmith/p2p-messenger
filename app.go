@@ -32,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}()
 
-	p := proto.NewProto(*name)
+	p := proto.NewProto(*name, *port)
 
 	var wg sync.WaitGroup
 
