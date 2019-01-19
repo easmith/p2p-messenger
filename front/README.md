@@ -1,3 +1,11 @@
+# ReactJS App for p2p-messenger
+
+# Below are the standard reacts scripts commands
+
+*
+-
+*
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

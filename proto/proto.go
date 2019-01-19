@@ -1,3 +1,6 @@
+/*
+Core of p2p protocol
+*/
 package proto
 
 import (

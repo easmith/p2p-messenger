@@ -41,7 +41,7 @@ func SaveKey(fileName string) *os.File {
 
 func LoadKey(name string) (publicKey ed25519.PublicKey, privateKey ed25519.PrivateKey) {
 
-	fileName := name + ".key"
+	fileName := name + ".seed"
 	file, e := os.Open(fileName)
 
 	if e != nil {
