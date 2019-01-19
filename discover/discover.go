@@ -1,5 +1,4 @@
-/*
-Package discover
+/*Package discover
 ... to discovering new peers on network and to announcing yourself
 */
 package discover
