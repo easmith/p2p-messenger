@@ -27,7 +27,7 @@ export default class Header extends Component {
                     <Collapse isOpen={!this.state.collapsed} navbar>
                         <Nav navbar>
                             <NavItem>
-                                <NavLink href="https://github.com/easmith/p2p-messenger">Source</NavLink>
+                                <NavLink href="https://github.com/easmith/p2p-messenger" target={"_blank"}>Source</NavLink>
                             </NavItem>
                             <NavItem>
                                 @Copyleft easmith

@@ -1,3 +1,6 @@
+/*
+Package to discovering new peers on network and to announcing yourself
+*/
 package discover
 
 import (
@@ -8,6 +11,7 @@ import (
 	"github.com/easmith/p2p-messenger/proto"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
@@ -16,26 +20,26 @@ var peers = make(map[string]string)
 //StartDiscover Начинает подключения к пирам из списка peers.txt и отправляет им свое имя
 func StartDiscover(p *proto.Proto, peersFile string) {
 
-	go meower("224.0.0.1:35035", p)
-	go meowListener("224.0.0.1:35035", p, connectToPeer)
+	go startMeow("224.0.0.1:35035", p)
+	go listenMeow("224.0.0.1:35035", p, connectToPeer)
 
-	//file, err := os.Open(peersFile)
-	//if err != nil {
-	//	log.Printf("DISCOVER: Open peers.txt error: %s", err)
-	//	return
-	//}
-	//
-	//var lastPeers []string
-	//
-	//scanner := bufio.NewScanner(file)
-	//for scanner.Scan() {
-	//	lastPeers = append(lastPeers, scanner.Text())
-	//}
-	//
-	//log.Printf("DISCOVER: Start peer discovering. Last seen peers: %v", len(lastPeers))
-	//for _, peerAddress := range lastPeers {
-	//	go connectToPeer(p, peerAddress)
-	//}
+	file, err := os.Open(peersFile)
+	if err != nil {
+		log.Printf("DISCOVER: Open peers.txt error: %s", err)
+		return
+	}
+
+	var lastPeers []string
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lastPeers = append(lastPeers, scanner.Text())
+	}
+
+	log.Printf("DISCOVER: Start peer discovering. Last seen peers: %v", len(lastPeers))
+	for _, peerAddress := range lastPeers {
+		go connectToPeer(p, peerAddress)
+	}
 }
 
 // подключаемся к пиру по адресу
@@ -72,7 +76,8 @@ func connectToPeer(p *proto.Proto, peerAddress string) {
 	// TODO: ping-pong
 }
 
-func meower(address string, p *proto.Proto) {
+// Отправка UPD multicast пакетов с информацией о себе
+func startMeow(address string, p *proto.Proto) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		log.Printf(err.Error())
@@ -92,7 +97,8 @@ func meower(address string, p *proto.Proto) {
 	}
 }
 
-func meowListener(address string, p *proto.Proto, handler func(p *proto.Proto, peerAddress string)) {
+// Прослушка UPD
+func listenMeow(address string, p *proto.Proto, handler func(p *proto.Proto, peerAddress string)) {
 	// Parse the string address
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {

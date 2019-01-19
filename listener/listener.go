@@ -1,10 +1,12 @@
+/*
+Listen port and detect connection type
+*/
 package listener
 
 import (
 	"bufio"
 	"fmt"
 	"github.com/easmith/p2p-messenger/proto"
-	"github.com/easmith/p2p-messenger/types"
 	"io/ioutil"
 	"log"
 	"net"
@@ -14,6 +16,16 @@ import (
 	"strings"
 )
 
+var itHttp = map[string]bool{
+	"GET ": true,
+	"HEAD": true,
+	"POST": true,
+}
+
+func ItIsHttp(ba []byte) bool {
+	return itHttp[string(ba)]
+}
+
 //StartListener Старт прослушивания порта и обработки входящих соединений
 func StartListener(proto *proto.Proto, port int) {
 	// Устновака порта в случае неправильного ввода
@@ -21,6 +33,7 @@ func StartListener(proto *proto.Proto, port int) {
 		port = 35035
 	}
 
+	// Прослушиваем все интерфейсы
 	service := fmt.Sprintf("0.0.0.0:%v", port)
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", service)
@@ -66,7 +79,7 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 		return
 	}
 
-	if types.ItIsHttp(buf) {
+	if ItIsHttp(buf) {
 		handleHttp(readWriter, conn, p)
 	} else {
 		peer := proto.NewPeer(conn)
