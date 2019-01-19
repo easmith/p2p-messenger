@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-// create new *.key file with random content
+//SaveKey create new *.seed file with random content
 func SaveKey(fileName string) *os.File {
 	file, e := os.Create(fileName)
 	if e != nil {
@@ -39,6 +39,7 @@ func SaveKey(fileName string) *os.File {
 	return file
 }
 
+//LoadKey load key from file
 func LoadKey(name string) (publicKey ed25519.PublicKey, privateKey ed25519.PrivateKey) {
 
 	fileName := name + ".seed"
@@ -59,7 +60,7 @@ func LoadKey(name string) (publicKey ed25519.PublicKey, privateKey ed25519.Priva
 	return
 }
 
-// create pair for ECDHE
+//CreateKeyExchangePair create pair for ECDHE
 func CreateKeyExchangePair() (publicKey [32]byte, privateKey [32]byte) {
 	pub, priv, err := ed25519.GenerateKey(nil)
 	if err != nil {
@@ -76,7 +77,7 @@ func CreateKeyExchangePair() (publicKey [32]byte, privateKey [32]byte) {
 	return
 }
 
-// Calculate shared secret
+//CalcSharedSecret Calculate shared secret
 func CalcSharedSecret(publicKey []byte, privateKey []byte) (secret [32]byte) {
 	var pubKey [32]byte
 	var privKey [32]byte
@@ -90,7 +91,7 @@ func CalcSharedSecret(publicKey []byte, privateKey []byte) (secret [32]byte) {
 	return
 }
 
-//Encrypt
+//Encrypt the message
 func Encrypt(content []byte, key []byte) []byte {
 	tip := len(content) % aes.BlockSize
 	if tip != 0 {
@@ -119,6 +120,7 @@ func Encrypt(content []byte, key []byte) []byte {
 	return encrypted
 }
 
+//Decrypt encrypted message
 func Decrypt(encrypted []byte, key []byte) []byte {
 	block, err := aes.NewCipher(key)
 	if err != nil {

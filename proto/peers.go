@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
+//SharedKey ECDHE shared key
 type SharedKey struct {
 	RemoteKey []byte
 	LocalKey  []byte
 	Secret    []byte
 }
 
+//Update shared key info
 func (sk *SharedKey) Update(remoteKey []byte, localKey []byte) {
 	if remoteKey != nil {
 		sk.RemoteKey = remoteKey
@@ -32,6 +34,7 @@ func (sk *SharedKey) Update(remoteKey []byte, localKey []byte) {
 	}
 }
 
+//Peer basic struct to describe peer
 type Peer struct {
 	PubKey    ed25519.PublicKey
 	Conn      *net.Conn
@@ -46,6 +49,7 @@ func (p Peer) String() string {
 	return string(p.Name) + ":" + hex.EncodeToString(p.PubKey)
 }
 
+//NewPeer create new peer struct by socket connection
 func NewPeer(conn net.Conn) *Peer {
 	return &Peer{
 		PubKey:    nil,
@@ -62,6 +66,7 @@ func NewPeer(conn net.Conn) *Peer {
 	}
 }
 
+//UpdatePeer Update peer struct after handshake
 func (p *Peer) UpdatePeer(envelope *Envelope) error {
 	if string(envelope.Cmd) != "HAND" {
 		return errors.New("invalid command")
@@ -92,17 +97,20 @@ func (p *Peer) UpdatePeer(envelope *Envelope) error {
 	return nil
 }
 
+//Peers synchronised list of peers
 type Peers struct {
 	sync.RWMutex
 	peers map[string]*Peer
 }
 
+//NewPeers create new list of peers
 func NewPeers() *Peers {
 	return &Peers{
 		peers: make(map[string]*Peer),
 	}
 }
 
+//Put put new peer to list
 func (p Peers) Put(peer *Peer) {
 	p.Lock()
 	defer p.Unlock()
@@ -110,6 +118,7 @@ func (p Peers) Put(peer *Peer) {
 	p.peers[string(peer.PubKey)] = peer
 }
 
+//Get find and get peer in list
 func (p Peers) Get(key string) (peer *Peer, found bool) {
 	p.RLock()
 	defer p.RUnlock()
@@ -118,6 +127,7 @@ func (p Peers) Get(key string) (peer *Peer, found bool) {
 	return
 }
 
+//Remove remove peer from list
 func (p Peers) Remove(peer *Peer) (found bool) {
 	p.RLock()
 	defer p.RUnlock()
@@ -126,6 +136,7 @@ func (p Peers) Remove(peer *Peer) (found bool) {
 	return
 }
 
+//PeerList return json list of peers
 func (p Peers) PeerList() *WsPeerList {
 
 	peerList := &WsPeerList{
