@@ -1,5 +1,5 @@
 /*
-	Go training project
+Go training project
 */
 package main
 
@@ -18,6 +18,7 @@ import (
 	"syscall"
 )
 
+//InitParams initialising params
 type InitParams struct {
 	Name         string
 	Port         int

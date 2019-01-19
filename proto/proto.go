@@ -1,4 +1,5 @@
 /*
+Package proto
 Core of p2p protocol
 */
 package proto
@@ -22,6 +23,7 @@ type Proto struct {
 	Broker  chan *Envelope
 }
 
+//MyName return current peer name with public key
 func (p Proto) MyName() *PeerName {
 	return &PeerName{
 		Name:   p.Name,

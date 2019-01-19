@@ -57,6 +57,7 @@ func NewEnvelope(cmd string, contentBytes []byte) (envelope *Envelope) {
 	return
 }
 
+//NewSignedEnvelope create new envelop with signature
 func NewSignedEnvelope(cmd string, from []byte, to []byte, sign []byte, contentBytes []byte) (envelope *Envelope) {
 	envelope = NewEnvelope(cmd, contentBytes)
 	envelope.From = from
@@ -130,6 +131,7 @@ func ReadEnvelope(reader *bufio.Reader) (*Envelope, error) {
 	return envelope, nil
 }
 
+//Send send envelop to peer
 func (m Envelope) Send(peer *Peer) {
 	log.Printf("Send to peer: %s %s", peer.Name, m.Cmd)
 	_, err := (*peer.Conn).Write(m.Serialize())

@@ -1,4 +1,5 @@
 /*
+Package listener
 Listen port and detect connection type
 */
 package listener
@@ -22,6 +23,7 @@ var itHttp = map[string]bool{
 	"POST": true,
 }
 
+//ItIsHttp detect http request by first bytes
 func ItIsHttp(ba []byte) bool {
 	return itHttp[string(ba)]
 }
@@ -59,7 +61,7 @@ func StartListener(proto *proto.Proto, port int) {
 
 }
 
-// Обработка входящего соединения
+//onConnection Обработка входящего соединения
 func onConnection(conn net.Conn, p *proto.Proto) {
 	defer func() {
 		//proto.Peers.(conn)
@@ -87,6 +89,7 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 	}
 }
 
+//handleHttp Обработка HTTP запроса
 func handleHttp(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 	request, err := http.ReadRequest(rw.Reader)
 
