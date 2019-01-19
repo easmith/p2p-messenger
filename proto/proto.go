@@ -1,7 +1,5 @@
-/*
-Package proto
-Core of p2p protocol
-*/
+//Package proto
+//Core of p2p protocol
 package proto
 
 import (
