@@ -35,6 +35,7 @@ type HandShake struct {
 	ExKey  string `json:"exKey"`
 }
 
+//ToJson convert to JSON bytes
 func (v HandShake) ToJson() []byte {
 	return toJson(v)
 }
@@ -51,6 +52,7 @@ type WsMyName struct {
 	PubKey string `json:"id"`
 }
 
+//ToJson convert to JSON bytes
 func (v WsMyName) ToJson() []byte {
 	return toJson(v)
 }
@@ -61,6 +63,7 @@ type WsPeerList struct {
 	Peers []PeerName `json:"peers"`
 }
 
+//ToJson convert to JSON bytes
 func (v WsPeerList) ToJson() []byte {
 	return toJson(v)
 }
@@ -73,6 +76,7 @@ type WsMessage struct {
 	Content string `json:"content"`
 }
 
+//ToJson convert to JSON bytes
 func (v WsMessage) ToJson() []byte {
 	return toJson(v)
 }
