@@ -186,7 +186,7 @@ func iface() {
 	}
 
 	log.Printf("=====")
-	for k, _ := range addrs {
+	for k := range addrs {
 		log.Printf("%v", k)
 	}
 }

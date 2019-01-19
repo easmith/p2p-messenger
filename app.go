@@ -1,5 +1,14 @@
 /*
 Go training project
+
+  -name string
+    	you name (default "eku@eku-HP-ProBook-450-G3")
+  -peers string
+    	Path to file with peer addresses on each line (default "peers.txt")
+  -port int
+    	port that have to listen (default 35035)
+  -webview
+    	Start WebView ui (default true)
 */
 package main
 
@@ -36,7 +45,7 @@ func init() {
 		Name:         *flag.String("name", currentUser.Username+"@"+hostName, "you name"),
 		Port:         *flag.Int("port", 35035, "port that have to listen"),
 		PeersFile:    *flag.String("peers", "peers.txt", "Path to file with peer addresses on each line"),
-		StartWebView: *flag.Bool("webview", true, "Start WebView ui"),
+		StartWebView: *flag.Bool("webview", false, "Start WebView ui"),
 	}
 
 	flag.Parse()
