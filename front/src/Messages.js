@@ -15,8 +15,10 @@ export default class Messages extends Component {
                     {this.props.messages.map((m) => {
                         return (
                             <Row>
-                                <Col xs={1} className={"text-right border-bottom " + (!m.isMine ? "text-danger": "")}>{m.date}</Col>
-                                <Col xs={1} className={"text-right border-bottom " + (!m.isMine ? "text-danger": "")}>{m.from}</Col>
+                                <Col xs={1}
+                                     className={"text-right border-bottom " + (!m.isMine ? "text-danger" : "")}>{m.date}</Col>
+                                <Col xs={1}
+                                     className={"text-right border-bottom " + (!m.isMine ? "text-danger" : "")}>{m.from}</Col>
                                 <Col>{m.content}</Col>
                             </Row>
                         )
@@ -31,7 +33,6 @@ export default class Messages extends Component {
         }
     }
 }
-
 
 
 Messages.propTypes = {

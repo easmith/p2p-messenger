@@ -99,7 +99,9 @@ func Encrypt(content []byte, key []byte) []byte {
 		content = append(content, repeat...)
 	}
 
-	log.Printf("length whant to bee 0 = %v", len(content)%aes.BlockSize)
+	if len(content)%aes.BlockSize != 0 {
+		log.Printf("length must be 0 = %v", len(content)%aes.BlockSize)
+	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {

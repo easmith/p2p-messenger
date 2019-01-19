@@ -21,13 +21,14 @@ export default class Header extends Component {
     render() {
         return (
             <header>
-                <Navbar color={"dark"} dark >
+                <Navbar color={"dark"} dark>
                     <NavbarBrand href="/" className="mr-auto">PeerToPeer Messenger</NavbarBrand>
-                    <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
+                    <NavbarToggler onClick={this.toggleNavbar} className="mr-2"/>
                     <Collapse isOpen={!this.state.collapsed} navbar>
                         <Nav navbar>
                             <NavItem>
-                                <NavLink href="https://github.com/easmith/p2p-messenger" target={"_blank"}>Source</NavLink>
+                                <NavLink href="https://github.com/easmith/p2p-messenger"
+                                         target={"_blank"}>Source</NavLink>
                             </NavItem>
                             <NavItem>
                                 @Copyleft easmith

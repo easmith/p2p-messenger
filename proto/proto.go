@@ -154,7 +154,7 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, peer *Peer) {
 			log.Printf("Signed envelope!")
 		}
 
-		log.Printf("LISTENER: recieve envelope from %s", (*peer.Conn).RemoteAddr())
+		log.Printf("LISTENER: receive envelope from %s", (*peer.Conn).RemoteAddr())
 
 		switch string(envelope.Cmd) {
 		case "HAND":
