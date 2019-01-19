@@ -128,6 +128,10 @@ func listenMeow(address string, p *proto.Proto, handler func(p *proto.Proto, pee
 
 		peerPubKeyStr := string(trim[5 : 5+64])
 		peerPubKey, err := hex.DecodeString(peerPubKeyStr)
+		if err != nil {
+			log.Printf("DecodeHexString failed: %s", err)
+			continue
+		}
 
 		// Если с этим пиром уже есть связь, то пропускаем его
 		_, found := p.Peers.Get(string(peerPubKey))

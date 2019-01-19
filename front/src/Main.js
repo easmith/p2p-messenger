@@ -23,19 +23,19 @@ export default class Main extends Component {
         }
     }
 
-    componentDidMount () {
-        let socket = new WebSocket("ws://"+ document.location.hostname+(document.location.port ? ':'+document.location.port : '') + "/ws");
+    componentDidMount() {
+        let socket = new WebSocket("ws://" + document.location.hostname + (document.location.port ? ':' + document.location.port : '') + "/ws");
 
         this.setState({socket: socket}, () => {
-            socket.onopen = function() {
+            socket.onopen = function () {
                 console.log("Соединение установлено.");
-                socket.send(JSON.stringify({cmd:"HELLO"}));
-                socket.send(JSON.stringify({cmd:"PEERS"}));
+                socket.send(JSON.stringify({cmd: "HELLO"}));
+                socket.send(JSON.stringify({cmd: "PEERS"}));
             };
 
             socket.onmessage = this.onMessage;
 
-            socket.onclose = function(event) {
+            socket.onclose = function (event) {
                 if (event.wasClean) {
                     console.log('Соединение закрыто чисто');
                 } else {
@@ -44,7 +44,7 @@ export default class Main extends Component {
                 console.log('Код: ' + event.code + ' причина: ' + event.reason);
             };
 
-            socket.onerror = function(error) {
+            socket.onerror = function (error) {
                 console.log("Ошибка " + error.message);
             };
         });
@@ -112,7 +112,7 @@ export default class Main extends Component {
                 console.log(oldMessages)
 
                 this.setState({
-                    peers: update(this.state.peers, {[peerId]: {counter: {$set: counter }}}),
+                    peers: update(this.state.peers, {[peerId]: {counter: {$set: counter}}}),
                     messages: update(this.state.messages, {[peerId]: {$set: oldMessages}})
                 });
                 break;
@@ -125,7 +125,7 @@ export default class Main extends Component {
     };
 
     updatePeers = () => {
-        this.state.socket.send(JSON.stringify({cmd:"PEERS"}));
+        this.state.socket.send(JSON.stringify({cmd: "PEERS"}));
     };
 
     sendMessage = (msg) => {
@@ -162,7 +162,8 @@ export default class Main extends Component {
                         <Peers peers={this.state.peers} onSelectPeer={this.selectPeer}/>
                     </Col>
                     <Col xs={9}>
-                        <Messages messages={this.state.interlocutor?this.state.messages[this.state.interlocutor.id]:[]}/>
+                        <Messages
+                            messages={this.state.interlocutor ? this.state.messages[this.state.interlocutor.id] : []}/>
                         <MessageInput interlocutor={this.state.interlocutor} onSendMessage={this.sendMessage}/>
                     </Col>
                 </Row>
