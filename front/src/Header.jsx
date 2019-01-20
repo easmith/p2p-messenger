@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Collapse, Nav, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink} from "reactstrap";
+import {Navbar, NavbarBrand} from "reactstrap";
 
 export default class Header extends Component {
 
@@ -21,20 +21,8 @@ export default class Header extends Component {
     render() {
         return (
             <header>
-                <Navbar color={"dark"} dark>
+                <Navbar className={"messenger-navbar"}>
                     <NavbarBrand href="/" className="mr-auto">PeerToPeer Messenger</NavbarBrand>
-                    <NavbarToggler onClick={this.toggleNavbar} className="mr-2"/>
-                    <Collapse isOpen={!this.state.collapsed} navbar>
-                        <Nav navbar>
-                            <NavItem>
-                                <NavLink href="https://github.com/easmith/p2p-messenger"
-                                         target={"_blank"}>Source</NavLink>
-                            </NavItem>
-                            <NavItem>
-                                @Copyleft easmith
-                            </NavItem>
-                        </Nav>
-                    </Collapse>
                 </Navbar>
             </header>
         )

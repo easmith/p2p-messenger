@@ -4,7 +4,6 @@ import {Button, Input, InputGroup, InputGroupAddon} from "reactstrap";
 import PropTypes from 'prop-types';
 
 export default class MessageInput extends Component {
-
     _handleEnter = (e) => {
         if (e.key === 'Enter') {
             this.props.onSendMessage(e.target.value);
@@ -12,20 +11,26 @@ export default class MessageInput extends Component {
         }
     };
 
+    onSend = () => {
+        this.props.onSendMessage(this.inputTag.value);
+        this.inputTag.value = "";
+    };
+
     render() {
         if (this.props.interlocutor == null) {
-            return <div className={"mt-3"}>Select peer</div>
+            return (
+                <div className={"message-input"}>
+                    <div>Select a peer</div>
+                </div>
+            )
         }
+
         return (
-            <InputGroup className={"mt-3"}>
-                <InputGroupAddon addonType="prepend">
-                    <Button color="danger">{this.props.interlocutor.name}</Button>
-                </InputGroupAddon>
-                <Input placeholder="Type a message and press Enter" onKeyPress={this._handleEnter}/>
-                {/*<InputGroupAddon addonType="append">*/}
-                {/*<Button color="success">Send!</Button>*/}
-                {/*</InputGroupAddon>*/}
-            </InputGroup>
+            <div className={"message-input"}>
+                <input key={"msgInput"} placeholder="Type a message and press Enter" onKeyPress={this._handleEnter}
+                       ref={(el) => { this.inputTag = el; }}/>
+                <button onClick={this.onSend}>Send</button>
+            </div>
         )
     }
 }
