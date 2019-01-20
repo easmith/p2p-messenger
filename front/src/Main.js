@@ -77,7 +77,7 @@ export default class Main extends Component {
             case "MESS" : {
                 let peerId = "";
                 let fromName = "";
-                let counter = 1;
+                let counter = 0;
 
                 if (parsedMessage.from === this.state.iam.id) {
                     // это наше сообщение
@@ -140,7 +140,8 @@ export default class Main extends Component {
 
     selectPeer = (peer) => {
         this.setState({
-            interlocutor: peer
+            interlocutor: peer,
+            peers: update(this.state.peers, {[peer.id]: {counter: {$set: 0}}}),
         })
     };
 
@@ -148,23 +149,36 @@ export default class Main extends Component {
     render() {
         let interlocutorName = this.state.interlocutor ? " with " + this.state.interlocutor.name : "";
         return (
-            <Container className={"vh-100 mt-4"} fluid>
-                <Row>
-                    <Col className={"border-right"}>
-                        <h3>Peers <Button color="info" size={"sm"} onClick={this.updatePeers}>update</Button></h3>
+            <Container className={"d-flex h-100"} fluid>
+                <Row className={"flex-fill flex-columns"}>
+                    <Col xs={3} className={"d-flex flex-column"}>
+                        <Row className={"peer-header"}>
+                            <Col>
+                                <h4>Peers </h4>
+                            </Col>
+                        </Row>
+                        <Row noGutters className={"scroll-on-overflow"}>
+                            <Col>
+                                <Peers peers={this.state.peers} onSelectPeer={this.selectPeer}/>
+                            </Col>
+                        </Row>
+                        <Row className={"mt-auto peer-header"}>
+                            <Col>
+                                <Button color="info" size={"sm"} onClick={this.updatePeers}>update peers</Button>
+                            </Col>
+                        </Row>
                     </Col>
-                    <Col xs={9}>
-                        <h3>Chat {interlocutorName}</h3>
-                    </Col>
-                </Row>
-                <Row className={"h-75"}>
-                    <Col xs={3} className={"border-right"}>
-                        <Peers peers={this.state.peers} onSelectPeer={this.selectPeer}/>
-                    </Col>
-                    <Col xs={9}>
-                        <Messages
-                            messages={this.state.interlocutor ? this.state.messages[this.state.interlocutor.id] : []}/>
-                        <MessageInput interlocutor={this.state.interlocutor} onSendMessage={this.sendMessage}/>
+                    <Col xs={9} className={"messages d-flex align-content-end flex-column"}>
+                        <Row className={"mb-auto pl-3 chat-header"}>
+                            <h3>Chat {interlocutorName}</h3>
+                        </Row>
+                        <Row className={" scroll-on-overflow"}>
+                            <Messages
+                            messages={this.state.interlocutor ? (this.state.messages[this.state.interlocutor.id]): []}/>
+                        </Row>
+                        <Row className={"chat-footer"}>
+                            <MessageInput interlocutor={this.state.interlocutor} onSendMessage={this.sendMessage}/>
+                        </Row>
                     </Col>
                 </Row>
             </Container>

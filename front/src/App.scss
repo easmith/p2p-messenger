@@ -1,0 +1,92 @@
+body, html, #root {
+    height: 100%;
+    background: grey;
+    overflow: hidden;
+}
+
+.messenger-navbar {
+    background: #2c3e50;
+
+    a {
+        color: lightgrey;
+        &:hover {
+            color: white;
+        }
+    }
+}
+
+.peers li {
+    cursor: pointer;
+}
+
+.peer-header, .chat-header {
+    min-height: 40px;
+    background: #32465a;
+}
+
+.peer-header {
+    color: lightgrey;
+}
+
+.peer-footer, .chat-footer {
+    min-height: 40px;
+    background: #32465a;
+}
+
+.chat-header {
+    background: #e6eaea;
+}
+.chat-footer {
+    border-top: 1px solid #32465a;
+    max-height: 40px;
+}
+
+.messages {
+    background: #f5f5f5;
+}
+
+.scroll-on-overflow {
+    overflow: auto;
+}
+
+.peers .list-group-item {
+    padding: 0px;
+    background: darkgray;
+    &:hover {
+        background: lightgrey;
+    }
+}
+
+button {
+    outline:0 !important;
+    &:focus {
+        outline:0 !important;
+    }
+    &:hover {
+        color:#333333;
+    }
+    &:active {
+        color:green;
+    }
+}
+
+.message-input {
+    width: 100%;
+    input {
+        background: #f5f5f5;
+        border: none;
+        padding: 0 0 0 10px;
+        border-radius: 0;
+        height: 40px;
+        width: calc(100% - 60px);
+    }
+    button {
+        cursor: pointer;
+        height: 41px;
+        width: 60px;
+        border-radius: 0;
+        border: none;
+        outline:0;
+
+    }
+}

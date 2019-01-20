@@ -8,33 +8,54 @@ import PropTypes from 'prop-types';
 
 export default class Messages extends Component {
 
+    scrollToBottom = () => {
+        this.messagesEnd.scrollIntoView({ behavior: "smooth" });
+    };
+
+    componentDidMount() {
+        this.scrollToBottom();
+    }
+
+    componentDidUpdate() {
+        this.scrollToBottom();
+    }
+
     render() {
-        if (this.props.messages) {
+        if (!this.props.messages || !this.props.messages.length) {
             return (
-                <Container className={"messages rounded"} fluid>
-                    {this.props.messages.map((m) => {
-                        return (
-                            <Row>
-                                <Col xs={1}
-                                     className={"text-right border-bottom " + (!m.isMine ? "text-danger" : "")}>{m.date}</Col>
-                                <Col xs={1}
-                                     className={"text-right border-bottom " + (!m.isMine ? "text-danger" : "")}>{m.from}</Col>
-                                <Col>{m.content}</Col>
-                            </Row>
-                        )
-                    })}
-                </Container>
-            )
-        } else {
-            return (
-                <Container className={"messages rounded"} fluid>
+                <Container className={"flex-fill"} fluid >
+                    <div style={{float: "left", clear: "both"}}
+                         ref={(el) => {
+                             this.messagesEnd = el;
+                         }}>
+                    </div>
                 </Container>
             )
         }
+
+        return (
+            <Container className={"flex-fill"} fluid>
+                {this.props.messages.map((m) => {
+                    return (
+                        <Row className={"border-bottom "}>
+                            <Col xs={1}
+                                 className={"text-right text-truncate " + (!m.isMine ? "text-danger" : "")}>{m.from}</Col>
+                            <Col>{m.content}</Col>
+                            <Col xs={1}
+                                 className={"text-right " + (!m.isMine ? "text-danger" : "")}>{m.date}</Col>
+                        </Row>
+                    )
+                })}
+                <div style={{ float:"left", clear: "both" }}
+                     ref={(el) => { this.messagesEnd = el; }}>
+                </div>
+            </Container>
+        )
+
     }
 }
 
 
 Messages.propTypes = {
-    messages: PropTypes.object
+    messages: PropTypes.array
 };
