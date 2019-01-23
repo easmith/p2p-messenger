@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"encoding/hex"
 	"golang.org/x/crypto/ed25519"
+	"io"
 	"log"
 	"os"
 	"reflect"
@@ -12,12 +13,13 @@ import (
 
 //Proto Ядро протокола
 type Proto struct {
-	Port    int
-	Name    string
-	Peers   *Peers
-	PubKey  ed25519.PublicKey
-	privKey ed25519.PrivateKey
-	Broker  chan *Envelope
+	Port     int
+	Name     string
+	Peers    *Peers
+	PubKey   ed25519.PublicKey
+	privKey  ed25519.PrivateKey
+	Broker   chan *Envelope
+	handlers map[string]func(peer *Peer, envelope *Envelope)
 }
 
 //MyName return current peer name with public key
@@ -57,14 +59,22 @@ func getSeed() []byte {
 func NewProto(name string, port int) *Proto {
 	//privateKey := ed25519.NewKeyFromSeed(getSeed())
 	publicKey, privateKey := LoadKey(name)
-	return &Proto{
-		Port:    port,
-		Name:    name,
-		Peers:   NewPeers(),
-		PubKey:  publicKey,
-		privKey: privateKey,
-		Broker:  make(chan *Envelope),
+	proto := &Proto{
+		Port:     port,
+		Name:     name,
+		Peers:    NewPeers(),
+		PubKey:   publicKey,
+		privKey:  privateKey,
+		Broker:   make(chan *Envelope),
+		handlers: make(map[string]func(peer *Peer, envelope *Envelope)),
 	}
+
+	// Обработчики конвертов
+	proto.handlers["HAND"] = proto.onHand
+	proto.handlers["MESS"] = proto.onMess
+	proto.handlers["LIST"] = proto.onList
+
+	return proto
 }
 
 //SendName Отправка своего имени в сокет
@@ -128,8 +138,9 @@ func (p Proto) RegisterPeer(peer *Peer) *Peer {
 
 //UnregisterPeer Удаление пира из списка
 func (p Proto) UnregisterPeer(peer *Peer) {
-	p.Peers.Remove(peer)
-	log.Printf("UnRegister peer: %s", peer.Name)
+	if p.Peers.Remove(peer) {
+		log.Printf("UnRegister peer: %s", peer.Name)
+	}
 }
 
 //ListenPeer Старт прослушивания соединения с пиром
@@ -143,7 +154,10 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, peer *Peer) {
 	for {
 		envelope, err := ReadEnvelope(rw.Reader)
 		if err != nil {
-			log.Printf("Error on read Envelope: %v", err)
+			if err != io.EOF {
+				log.Printf("Error on read Envelope: %v", err)
+			}
+			log.Printf("Disconnect peer %s", peer)
 			break
 		}
 
@@ -153,37 +167,17 @@ func (p Proto) HandleProto(rw *bufio.ReadWriter, peer *Peer) {
 
 		log.Printf("LISTENER: receive envelope from %s", (*peer.Conn).RemoteAddr())
 
-		switch string(envelope.Cmd) {
-		case "HAND":
-			{
-				newPeer := NewPeer(*peer.Conn)
+		handler, found := p.handlers[string(envelope.Cmd)]
 
-				err := newPeer.UpdatePeer(envelope)
-				if err != nil {
-					log.Printf("Update peer error: %s", err)
-				} else {
-					if peer != nil {
-						p.UnregisterPeer(peer)
-					}
-					p.RegisterPeer(newPeer)
-					peer = newPeer
-				}
-				p.SendName(peer)
-
-			}
-		case "MESS":
-			{
-				envelope.Content = Decrypt(envelope.Content, peer.SharedKey.Secret)
-				p.Broker <- envelope
-			}
-		default:
-			log.Printf("PROTO MESSAGE %v %v %v", envelope.Cmd, envelope.Id, envelope.Content)
+		if !found {
+			log.Printf("LISTENER: UNHANDLED PROTO MESSAGE %v %v %v", envelope.Cmd, envelope.Id, envelope.Content)
+			continue
 		}
 
+		handler(peer, envelope)
 	}
 
 	if peer != nil {
 		p.UnregisterPeer(peer)
 	}
-
 }
