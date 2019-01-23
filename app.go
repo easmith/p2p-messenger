@@ -60,6 +60,11 @@ func init() {
 
 func main() {
 
+	fff := retro()
+
+	i := fff(1, 2)
+	log.Printf("result = %v", i)
+
 	signalChannel := make(chan os.Signal, 2)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -74,6 +79,12 @@ func main() {
 		startWithWebView(p)
 	} else {
 		startWithoutWebView(p)
+	}
+}
+
+func retro() func(a int, b int) int {
+	return func(a int, b int) int {
+		return a + b
 	}
 }
 

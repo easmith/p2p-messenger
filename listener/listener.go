@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/easmith/p2p-messenger/proto"
+	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -77,7 +78,9 @@ func onConnection(conn net.Conn, p *proto.Proto) {
 
 	buf, err := readWriter.Peek(4)
 	if err != nil {
-		log.Printf("Read peak ERROR: %s", err)
+		if err != io.EOF {
+			log.Printf("Read peak ERROR: %s", err)
+		}
 		return
 	}
 
