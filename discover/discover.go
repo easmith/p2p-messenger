@@ -138,9 +138,6 @@ func listenMeow(address string, p *proto.Proto, handler func(p *proto.Proto, pee
 
 		peerAddress := src.IP.String() + string(trim[5+64:])
 
-		log.Printf(" peer: %v %v", peerPubKeyStr, found)
-		log.Printf("Found peer: %s", peerAddress)
-
 		handler(p, peerAddress)
 	}
 }
@@ -156,6 +153,13 @@ func handShake(p *proto.Proto, conn net.Conn) *proto.Peer {
 	if err != nil {
 		log.Printf("Error on read Envelope: %s", err)
 		return nil
+	}
+
+	if string(envelope.Cmd) == "HAND" {
+		if _, found := p.Peers.Get(string(envelope.From)); found {
+			log.Printf(" - - - - - - - - - - - - - - - --  -- - - - - Peer (%s) already exist", peer)
+			return nil
+		}
 	}
 
 	err = peer.UpdatePeer(envelope)

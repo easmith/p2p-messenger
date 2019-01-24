@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import {Button, Input, InputGroup, InputGroupAddon} from "reactstrap";
 
 import PropTypes from 'prop-types';
 
@@ -26,7 +25,7 @@ export default class MessageInput extends Component {
         }
 
         return (
-            <div className={"message-input"}>
+            <div className={"message-input d-flex"}>
                 <input key={"msgInput"} placeholder="Type a message and press Enter" onKeyPress={this._handleEnter}
                        ref={(el) => { this.inputTag = el; }}/>
                 <button onClick={this.onSend}>Send</button>
