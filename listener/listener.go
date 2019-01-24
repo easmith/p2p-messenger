@@ -107,9 +107,9 @@ func handleHttp(rw *bufio.ReadWriter, conn net.Conn, p *proto.Proto) {
 		ProtoMinor: 1,
 	}
 
-	s := conn.RemoteAddr().String()[0:3] + "REMOVE_IT"
+	s := conn.RemoteAddr().String()[0:3]
 	// TODO: сравнение среза со строкой
-	if strings.EqualFold(s, "127") || strings.EqualFold(s, "[::") {
+	if !strings.EqualFold(s, "127") && !strings.EqualFold(s, "[::") {
 		response.Body = ioutil.NopCloser(strings.NewReader("Peer To Peer Messenger. see https://github.com/easmith/p2p-messenger"))
 	} else {
 

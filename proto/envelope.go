@@ -133,7 +133,7 @@ func ReadEnvelope(reader *bufio.Reader) (*Envelope, error) {
 
 //Send send envelop to peer
 func (m Envelope) Send(peer *Peer) {
-	log.Printf("Send to peer: %s %s", peer.Name, m.Cmd)
+	log.Printf("Send %s to peer %s ", m.Cmd, peer.Name)
 	_, err := (*peer.Conn).Write(m.Serialize())
 	if err != nil {
 		log.Printf("ERROR on write message: %v", err)

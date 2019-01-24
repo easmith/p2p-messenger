@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Badge, Button, ListGroup, ListGroupItem} from "reactstrap";
+import {Badge, ListGroup, ListGroupItem} from "reactstrap";
 import PropTypes from 'prop-types';
 
 

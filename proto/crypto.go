@@ -85,9 +85,9 @@ func CalcSharedSecret(publicKey []byte, privateKey []byte) (secret [32]byte) {
 	copy(privKey[:], privateKey[:])
 
 	curve25519.ScalarMult(&secret, &privKey, &pubKey)
-	log.Printf("publicKey %s", hex.EncodeToString(pubKey[:]))
-	log.Printf("privateKey %s", hex.EncodeToString(privKey[:]))
-	log.Printf("SharedKey %s", hex.EncodeToString(secret[:]))
+	//log.Printf("publicKey %s", hex.EncodeToString(pubKey[:]))
+	//log.Printf("privateKey %s", hex.EncodeToString(privKey[:]))
+	//log.Printf("SharedKey %s", hex.EncodeToString(secret[:]))
 	return
 }
 

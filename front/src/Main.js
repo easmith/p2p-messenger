@@ -50,6 +50,8 @@ export default class Main extends Component {
         });
     }
 
+
+
     onMessage = (event) => {
         console.log("Получены данные " + event.data);
         let parsedMessage = JSON.parse(event.data);
@@ -59,14 +61,18 @@ export default class Main extends Component {
             return;
         }
 
-        switch (parsedMessage.cmd) {
+        this.handler(parsedMessage);
+    };
+
+    handler = (msgObj) => {
+        switch (msgObj.cmd) {
             case "NAME" : {
-                this.setState({iam: {name: parsedMessage.name, id: parsedMessage.id}})
+                this.setState({iam: {name: msgObj.name, id: msgObj.id}})
                 break;
             }
             case "PEERS" : {
                 let peers = {};
-                parsedMessage.peers.forEach((p) => {
+                msgObj.peers.forEach((p) => {
                     let v = this.state.peers[p.id];
                     p.counter = v ? v.counter : 0;
                     peers[p.id] = p
@@ -79,19 +85,19 @@ export default class Main extends Component {
                 let fromName = "";
                 let counter = 0;
 
-                if (parsedMessage.from === this.state.iam.id) {
+                if (msgObj.from === this.state.iam.id) {
                     // это наше сообщение
-                    peerId = parsedMessage.to;
+                    peerId = msgObj.to;
                     fromName = this.state.iam.name;
                 } else {
                     // это сообщение от другого пира
-                    peerId = parsedMessage.from;
+                    peerId = msgObj.from;
                     let peer = this.state.peers[peerId];
                     if (peer) {
                         fromName = peer.name;
                         counter = peer.counter + 1;
                     } else {
-                        fromName = parsedMessage.from.substr(0, 10);
+                        fromName = msgObj.from.substr(0, 10);
                     }
                 }
 
@@ -102,14 +108,14 @@ export default class Main extends Component {
 
                 let message = {
                     date: new Date().toLocaleTimeString(['ru-RU', 'en-US'], {hour12: false}),
-                    isMine: parsedMessage.from === this.state.iam.id,
+                    isMine: msgObj.from === this.state.iam.id,
                     from: fromName,
-                    content: parsedMessage.content
+                    content: msgObj.content
                 };
 
                 oldMessages.push(message);
 
-                console.log(oldMessages)
+                console.log(oldMessages);
 
                 this.setState({
                     peers: update(this.state.peers, {[peerId]: {counter: {$set: counter}}}),
@@ -118,11 +124,11 @@ export default class Main extends Component {
                 break;
             }
             default : {
-                console.warn("Unknown cmd: " + parsedMessage.cmd)
+                console.warn("Unknown cmd: " + msgObj.cmd)
             }
         }
-
     };
+
 
     updatePeers = () => {
         this.state.socket.send(JSON.stringify({cmd: "PEERS"}));
