@@ -93,9 +93,9 @@ func CalcSharedSecret(publicKey []byte, privateKey []byte) (secret [32]byte) {
 
 //Encrypt the message
 func Encrypt(content []byte, key []byte) []byte {
-	tip := len(content) % aes.BlockSize
-	if tip != 0 {
-		repeat := bytes.Repeat([]byte("\x00"), aes.BlockSize-(tip))
+	padding := len(content) % aes.BlockSize
+	if padding != 0 {
+		repeat := bytes.Repeat([]byte("\x00"), aes.BlockSize-(padding))
 		content = append(content, repeat...)
 	}
 
