@@ -17,11 +17,10 @@ func (p Proto) onHand(peer *Peer, envelope *Envelope) {
 			p.UnregisterPeer(peer)
 		}
 
-		// TODO: не заменяется по ссылке (peer = newPeer), приходится копировать
+		// TODO: не заменяется по ссылке (peer = newPeer), приходится копировать поля
 		peer.Name = newPeer.Name
 		peer.PubKey = newPeer.PubKey
 		peer.SharedKey = newPeer.SharedKey
-		peer.FirstSeen = newPeer.FirstSeen
 		peer.LastSeen = time.Now().String()
 
 		p.RegisterPeer(peer)

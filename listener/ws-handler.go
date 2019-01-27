@@ -24,6 +24,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 	}
 	defer c.Close()
 
+	// канал на случай разрыва соединения
 	br := make(chan bool)
 
 	go waitMessageForWs(p, c, br)
@@ -91,6 +92,7 @@ func handleWs(w http.ResponseWriter, r *http.Request, p *proto.Proto) {
 
 func waitMessageForWs(p *proto.Proto, c *websocket.Conn, br chan bool) {
 	for {
+		// ждем либо новый конверт из p2p сети либо сигнал о разрыве соединения с сокетом
 		select {
 		case envelope := <-p.Broker:
 			{

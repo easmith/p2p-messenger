@@ -22,6 +22,12 @@ var itHttp = map[string]bool{
 	"GET ": true,
 	"HEAD": true,
 	"POST": true,
+	"PUT ": true,
+	"DELE": true,
+	"CONN": true,
+	"OPTI": true,
+	"TRAC": true,
+	"PATC": true,
 }
 
 //ItIsHttp detect http request by first bytes

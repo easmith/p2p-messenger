@@ -8,7 +8,7 @@ Go training project
   -port int
     	port that have to listen (default 35035)
   -webview
-    	Start WebView ui (default true)
+    	Start WebView ui (default false)
 */
 package main
 
@@ -27,7 +27,7 @@ import (
 	"syscall"
 )
 
-//InitParams initialising params
+//InitParams initializing params
 type InitParams struct {
 	Name         *string
 	Port         *int
