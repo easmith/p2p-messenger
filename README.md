@@ -5,19 +5,19 @@
 [![LICENSE](https://img.shields.io/github/license/easmith/p2p-messenger.svg)](https://github.com/easmith/p2p-messenger/blob/master/LICENSE)
 
 
-PoC in progress...
 
 Build front with simple UI:
-
-    cd front
-    npm update
-    npm run build
+```bash
+cd front
+npm update
+npm run build
+```
     
 Start messaging:
-    
-    cd ..
-    go build app.go
-    
+```bash 
+cd ..
+go run app.go -name Snowden
+```
 Start params
 
     -name string
@@ -28,3 +28,7 @@ Start params
         port that have to listen (default 35035)
     -webview
         Start WebView ui (default true)
+        
+Extended info
+- https://easmith.github.io/post/golang-p2p-messenger/
+- https://habr.com/ru/post/437686/
