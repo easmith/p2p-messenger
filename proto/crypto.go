@@ -62,13 +62,9 @@ func LoadKey(name string) (publicKey ed25519.PublicKey, privateKey ed25519.Priva
 
 //CreateKeyExchangePair create pair for ECDHE
 func CreateKeyExchangePair() (publicKey [32]byte, privateKey [32]byte) {
-	pub, priv, err := ed25519.GenerateKey(nil)
-	if err != nil {
+	if _, err := io.ReadFull(rand.Reader, privateKey[:]); err != nil {
 		panic(err)
 	}
-
-	copy(publicKey[:], pub[:])
-	copy(privateKey[:], priv[:])
 
 	curve25519.ScalarBaseMult(&publicKey, &privateKey)
 
